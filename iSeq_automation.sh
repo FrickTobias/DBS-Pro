@@ -126,7 +126,6 @@ cutadapt -a TTATATCACGACAAGAG \
 # H4: CTAACAGGATTCAGGTA
 cutadapt -g ^CGATGCTAATCAGATCA...AAGAGTCAATAGACCATCTAACAGGATTCAGGTA \
     --discard-untrimmed \
-
     -e 0.2 \
     -j $processors \
     -o $file_name".DBS.fastq.gz" \
