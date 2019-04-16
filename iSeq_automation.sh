@@ -165,13 +165,8 @@ pigz -cd $file_name".DBS.fastq.gz" | starcode \
 # UMI error correction
 for abc in "GCGTA" "ATAGC" "GTGCA"
 do
-
     # If file is empty, skip file (= No UMI:s found for that ABC)
-    ls -l $file_name"."$abc".fastq.gz"
-    [ -s $file_name"."$abc".fastq.gz" ]
-    empty=$(echo $?)
-
-    if ! $empty
+    if [[ -s $file_name"."$abc".fastq.gz" ]] && ! [[ -z $(pigz -cd $file_name"."$abc".fastq.gz" | head -c1) ]]
     then
         pigz -cd $file_name"."$abc".fastq.gz" | starcode \
             --print-clusters \
@@ -186,16 +181,14 @@ for err_corr_file in "DBS" "GCGTA" "ATAGC" "GTGCA"
 do
 
     # If file is empty, skip file (= No UMI:s found for that ABC)
-    ls -l $file_name"."$err_corr_file".fastq.gz"
-    [ -s $file_name"."$err_corr_file".fastq.gz" ]
-    empty=$(echo $?)
-
-    if ! $empty
+    if [[ -s $file_name"."$err_corr_file".SC_out" ]]
     then
         python3 $iSeq_path/python\ scripts/sum_analysis_prep.py \
             $file_name"."$err_corr_file".fastq.gz" \
             $file_name"."$err_corr_file".SC_out" \
             $file_name"."$err_corr_file".err_corr.fastq"
+    else
+        touch $file_name"."$err_corr_file".err_corr.fastq"
     fi
 done
 
