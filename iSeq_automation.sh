@@ -1,5 +1,5 @@
 #! /bin/bash
-#set -euo pipefail
+set -euo pipefail
 
 processors=1
 mailing=false
@@ -206,28 +206,3 @@ python3 $iSeq_path/python\ scripts/sum_results.py \
     $file_name".ATAGC.err_corr.fastq" \
     $file_name".GTGCA.err_corr.fastq" \
     $path"/result_summary.tsv"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
