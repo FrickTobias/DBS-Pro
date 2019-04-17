@@ -28,7 +28,7 @@ def main():
 
         try: cluster_seq, num_reads, raw_seqs_list = line.split()
         except ValueError:
-            print(line)
+            print("WARNING! Non-default starcode output line:\t'" + line + "'")
         for raw_seq in raw_seqs_list.split(","):
             if not raw_seq in err_corr:
                 err_corr[raw_seq] = cluster_seq

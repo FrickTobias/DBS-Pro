@@ -49,7 +49,7 @@ def main():
                 result_dict[bc] = dict()
                 for abc in abc_list:
                     result_dict[bc][abc] = int()
-                result_dict[bc][current_abc] += 1
+            result_dict[bc][current_abc] += 1
             progress.update()
         report_progress("Finished reading file\t" + str(current_abc))
 
