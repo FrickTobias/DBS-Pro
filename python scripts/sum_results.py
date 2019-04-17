@@ -61,23 +61,71 @@ def main():
             openout.write(out_string + '\n')
 
     if args.plot:
-        report_progress("Making 3D plot")
-        x = list()
-        y = list()
-        z = list()
-        progressBar = ProgressBar(name="Formatting data", min=0, max=len(result_dict.keys()),step=1)
-        for bc in result_dict.keys():
-            x.append(result_dict[bc][args.umi_1])
-            y.append(result_dict[bc][args.umi_2])
-            z.append(result_dict[bc][args.umi_3])
-            progressBar.update()
-        progressBar.terminate()
+        # Plotting
         report_progress("Showing plot.")
-        make_3D_plot(x, y, z)
+        if args.plot == "3D":
+            plot_3D(result_dict)
+        elif args.plot == "corr_mtx":
+            plot_density_correlation_matrix(result_dict)
 
     report_progress("Finished")
 
-def make_3D_plot(x, y, z):
+def plot_density_correlation_matrix(result_dict):
+    """
+
+    :param x:
+    :param y:
+    :param z:
+    :return:
+    """
+
+    # Formatting data into lists
+
+    data = [{'a': 1, 'b': 2}, {'a': 5, 'b': 10, 'c': 20}]
+
+    # With two column indices, values same
+    # as dictionary keys
+    import pandas as pd
+
+    df_list = list()
+    for bc_dict in result_dict.values():
+        df_list.append(bc_dict)
+
+    df = pd.DataFrame(df_list, columns=[args.umi_1, args.umi_2, args.umi_3])
+
+    #report_progress("Making 3D plot")
+    #df_list = list()
+    #progressBar = ProgressBar(name="Formatting data", min=0, max=len(result_dict.keys()), step=1)
+    #for bc in result_dict.keys():
+    #    x = result_dict[bc][args.umi_1]
+    #    y = result_dict[bc][args.umi_2]
+    #    z = result_dict[bc][args.umi_3]
+    #    df_list.append([x,y,z])
+    #    progressBar.update()
+    #progressBar.terminate()
+    #
+    ## Format into array
+    #import numpy as np
+    #df_array = np.array(df_list)
+    #
+    ## Format into pandas dataframe
+    #import pandas as pd
+    #df = pd.DataFrame(index=df_array[1:, 0],columns=df_array[0, 1:])
+
+
+    # Make plot imports
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    # Basic correlogram
+    kde = sns.pairplot(df, diag_kind="kde", diag_kws=dict(shade=True, bw=.05, vertical=False))
+    for x in range(3):
+        for y in range(3):
+            kde.axes[x,y].set_xlim((0, 50))
+    plt.show()
+
+
+def plot_3D(result_dict):
     """
     Makes and shows a 3D plot. Takes 3 lists with values as input, where the point n will have coordinates x[n] y[n] 
     z[n].
@@ -86,6 +134,17 @@ def make_3D_plot(x, y, z):
     :param z: List of z-values
     :return: None
     """
+
+    x = list()
+    y = list()
+    z = list()
+    progressBar = ProgressBar(name="Formatting data", min=0, max=len(result_dict.keys()), step=1)
+    for bc in result_dict.keys():
+        x.append(result_dict[bc][args.umi_1])
+        y.append(result_dict[bc][args.umi_2])
+        z.append(result_dict[bc][args.umi_3])
+        progressBar.update()
+    progressBar.terminate()
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -356,7 +415,7 @@ class readArgs(object):
         parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
                                                                            "Not recommended due to different function "
                                                                            "names in python 2 and 3.")
-        parser.add_argument("-p", "--plot", action="store_true", help="Make 3D plot for data.")
+        parser.add_argument("-p", "--plot", type=str, default=None, help="Make 3D plot for data.")
 
         args = parser.parse_args()
 
