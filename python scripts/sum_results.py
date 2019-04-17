@@ -60,7 +60,47 @@ def main():
                 out_string += str(result_dict[bc][abc]) + '\t'
             openout.write(out_string + '\n')
 
+    if args.plot:
+        report_progress("Making 3D plot")
+        x = list()
+        y = list()
+        z = list()
+        progressBar = ProgressBar(name="Formatting data", min=0, max=len(result_dict.keys()),step=1)
+        for bc in result_dict.keys():
+            x.append(result_dict[bc][args.umi_1])
+            y.append(result_dict[bc][args.umi_2])
+            z.append(result_dict[bc][args.umi_3])
+            progressBar.update()
+        progressBar.terminate()
+        report_progress("Showing plot.")
+        make_3D_plot(x, y, z)
+
     report_progress("Finished")
+
+def make_3D_plot(x, y, z):
+    """
+    Makes and shows a 3D plot. Takes 3 lists with values as input, where the point n will have coordinates x[n] y[n] 
+    z[n].
+    :param x: List of x-values
+    :param y: List of y-values
+    :param z: List of z-values
+    :return: None
+    """
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import seaborn as sns
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(x, y, z, c='r', marker='o')
+    ax.set_xlabel(args.umi_1 + " [count UMI]")
+    ax.set_ylabel(args.umi_1 + " [count UMI]")
+    ax.set_zlabel(args.umi_1 + " [count UMI]")
+
+    plt.show()
+
 
 def report_progress(string):
     """
@@ -316,6 +356,7 @@ class readArgs(object):
         parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
                                                                            "Not recommended due to different function "
                                                                            "names in python 2 and 3.")
+        parser.add_argument("-p", "--plot", action="store_true", help="Make 3D plot for data.")
 
         args = parser.parse_args()
 
