@@ -39,38 +39,103 @@ def main():
         report_progress("Reading file\t" + str(current_abc))
         generator = FileReader(current_abc)
         progress = ProgressReporter("Lines read", 1000000)
+
+        # Loop over reads in file, where read.seq = umi
         for read in generator.fastqReader():
-            try:bc = bc_dict[read.header]
+
+            # Try find UMI
+            try: bc = bc_dict[read.header]
             except KeyError:
                 umi_without_proper_bc += 1
                 progress.update()
                 continue
+
+            # If not dbs in result dict, add it and give it a dictionary for every abc
             if not bc in result_dict:
                 result_dict[bc] = dict()
                 for abc in abc_list:
-                    result_dict[bc][abc] = int()
-            result_dict[bc][current_abc] += 1
+                    result_dict[bc][abc] = dict()
+
+            # Add +1 to corresponding UMI sequence
+            if not read.seq in result_dict[bc][abc]:
+                result_dict[bc][current_abc][read.seq] = int()
+            result_dict[bc][current_abc][read.seq] += 1
+
             progress.update()
         report_progress("Finished reading file\t" + str(current_abc))
 
+    # Barcode-globbing umi/read counter for all ABC:s
+    abc_counter_umi = dict()
+    abc_counter_read = dict()
+    for abc in abc_list:
+        abc_counter_umi[abc] = list()
+        abc_counter_read[abc] = list()
+
+    # Output file writing and
     with open(args.output, 'w') as openout:
         for bc in result_dict.keys():
             out_string = str()
             for abc in abc_list:
-                out_string += str(result_dict[bc][abc]) + '\t'
+                # Prepping outstring: umi_count(abc1) + \t + umi_count(abc2) + \t + umi_count(abc3) \n
+                out_string += str(len(result_dict[bc][abc])) + '\t'
+                # Add number of UMI:s
+                abc_counter_umi[abc].append(len(result_dict[bc][abc].keys()))
+                # Add number of reads
+                abc_counter_read[abc].append(sum(result_dict[bc][abc].values()))
             openout.write(out_string + '\n')
 
-    if args.plot:
-        # Plotting
-        report_progress("Showing plot.")
-        if args.plot == "3D":
-            plot_3D(result_dict)
-        elif args.plot == "corr_mtx":
-            plot_density_correlation_matrix(result_dict)
+    # Reporting stats to terminal
+    print()
+    report_progress("Tot DBS count:\t" + str(len(result_dict.keys())))
+    for abc in abc_list:
+        print()
+        report_progress("\t" + abc + " tot umi count:\t" + "{:,}".format(sum(abc_counter_umi[abc])))
+        report_progress("\t" + abc + " N50 umi per dbs:\t" + "{:,}".format(n50_counter(abc_counter_umi[abc])))
+        report_progress("\t" + abc + " tot read count:\t" + "{:,}".format(sum(abc_counter_read[abc])))
+        report_progress("\t" + abc + " N50 read per dbs:\t" + "{:,}".format(n50_counter(abc_counter_read[abc])))
+    print()
 
+    # Plotting
+    report_progress("Prepping data for plot")
+    read_dict_for_plotting, umi_dict_for_plotting = format_data_for_plotting(result_dict)
+    plot_density_correlation_matrix(args.read_plot,read_dict_for_plotting)
+    plot_density_correlation_matrix(args.umi_plot,umi_dict_for_plotting)
     report_progress("Finished")
 
-def plot_density_correlation_matrix(result_dict):
+def n50_counter(input_list):
+    """
+    Calculates N50 for a given list
+    :param list: list with numbers (list)
+    :return: N50 (same type as elements of list)
+    """
+    input_list.sort()
+    half_tot = sum(input_list)/2
+
+    current_count = 0
+    for num in input_list:
+        current_count += num
+        if current_count >= half_tot:
+            return num
+
+def format_data_for_plotting(result_dict):
+    """
+    Divides result dict to plot-ready dicts
+    :param result_dict: dict[dbs][abc][umi] = read_count
+    :return:    dict[dbs][abc] = read_count
+                dict[dbs][abc] = umi_count
+    """
+    read_dict_for_plotting = dict()
+    umi_dict_for_plotting = dict()
+    for dbs in result_dict.keys():
+        read_dict_for_plotting[dbs] = dict()
+        umi_dict_for_plotting[dbs] = dict()
+        for abc in result_dict[dbs].keys():
+            read_dict_for_plotting[dbs][abc] = sum(result_dict[dbs][abc].values())
+            umi_dict_for_plotting[dbs][abc] = len(result_dict[dbs][abc].keys())
+
+    return read_dict_for_plotting, umi_dict_for_plotting
+
+def plot_density_correlation_matrix(name, result_dict):
     """
 
     :param x:
@@ -79,87 +144,35 @@ def plot_density_correlation_matrix(result_dict):
     :return:
     """
 
-    # Formatting data into lists
-
-    data = [{'a': 1, 'b': 2}, {'a': 5, 'b': 10, 'c': 20}]
 
     # With two column indices, values same
     # as dictionary keys
     import pandas as pd
 
     df_list = list()
-    for bc_dict in result_dict.values():
-        df_list.append(bc_dict)
+    for dbs_dict in result_dict.values():
+        df_list.append(dbs_dict)
 
     df = pd.DataFrame(df_list, columns=[args.umi_1, args.umi_2, args.umi_3])
-
-    #report_progress("Making 3D plot")
-    #df_list = list()
-    #progressBar = ProgressBar(name="Formatting data", min=0, max=len(result_dict.keys()), step=1)
-    #for bc in result_dict.keys():
-    #    x = result_dict[bc][args.umi_1]
-    #    y = result_dict[bc][args.umi_2]
-    #    z = result_dict[bc][args.umi_3]
-    #    df_list.append([x,y,z])
-    #    progressBar.update()
-    #progressBar.terminate()
-    #
-    ## Format into array
-    #import numpy as np
-    #df_array = np.array(df_list)
-    #
-    ## Format into pandas dataframe
-    #import pandas as pd
-    #df = pd.DataFrame(index=df_array[1:, 0],columns=df_array[0, 1:])
-
 
     # Make plot imports
     import seaborn as sns
     import matplotlib.pyplot as plt
 
     # Basic correlogram
-    kde = sns.pairplot(df, diag_kind="kde", diag_kws=dict(shade=True, bw=.05, vertical=False))
+    #g = sns.pairplot(df, diag_kws=dict(bins=50))
+    g = sns.pairplot(df, diag_kind="kde", diag_kws=dict(shade=True, bw=.05, vertical=False))
+    #g.map_diag(sns.kdeplot, lw = 3, legend = False)#plt.hist, bins=200)
+    #g.map_diag(plt.hist)
+
     for x in range(3):
         for y in range(3):
-            kde.axes[x,y].set_xlim((0, 50))
-    plt.show()
-
-
-def plot_3D(result_dict):
-    """
-    Makes and shows a 3D plot. Takes 3 lists with values as input, where the point n will have coordinates x[n] y[n] 
-    z[n].
-    :param x: List of x-values
-    :param y: List of y-values
-    :param z: List of z-values
-    :return: None
-    """
-
-    x = list()
-    y = list()
-    z = list()
-    progressBar = ProgressBar(name="Formatting data", min=0, max=len(result_dict.keys()), step=1)
-    for bc in result_dict.keys():
-        x.append(result_dict[bc][args.umi_1])
-        y.append(result_dict[bc][args.umi_2])
-        z.append(result_dict[bc][args.umi_3])
-        progressBar.update()
-    progressBar.terminate()
-
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import seaborn as sns
-    from mpl_toolkits.mplot3d import Axes3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    ax.scatter(x, y, z, c='r', marker='o')
-    ax.set_xlabel(args.umi_1 + " [count UMI]")
-    ax.set_ylabel(args.umi_1 + " [count UMI]")
-    ax.set_zlabel(args.umi_1 + " [count UMI]")
-
-    plt.show()
-
+            g.axes[x,y].set_xlim((0, 50))
+            g.axes[x,y].set_ylim((0, 50))
+    report_progress("Plotting " + name)
+    import os
+    my_path = os.path.abspath(__file__)
+    plt.savefig(name)
 
 def report_progress(string):
     """
@@ -410,12 +423,12 @@ class readArgs(object):
         parser.add_argument("umi_2", help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 2 in fastq format")
         parser.add_argument("umi_3", help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 3 in fastq format")
         parser.add_argument("output", help="output file")
-
+        parser.add_argument("read_plot", help="Filename for output reads/DBS pair plot (will be .png)")
+        parser.add_argument("umi_plot", help="Filename for output UMI:s/DBS pair plot (will be .png)")
         # Options
         parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
                                                                            "Not recommended due to different function "
                                                                            "names in python 2 and 3.")
-        parser.add_argument("-p", "--plot", type=str, default=None, help="Make 3D plot for data.")
 
         args = parser.parse_args()
 
