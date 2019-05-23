@@ -68,8 +68,8 @@ def main():
     abc_counter_umi = dict()
     abc_counter_read = dict()
     for abc in abc_list:
-        abc_counter_umi[abc] = list()
-        abc_counter_read[abc] = list()
+        abc_counter_umi[abc] = [0]
+        abc_counter_read[abc] = [0]
 
     # Output file writing and
     with open(args.output, 'w') as openout:
@@ -79,10 +79,22 @@ def main():
                 # Prepping outstring: umi_count(abc1) + \t + umi_count(abc2) + \t + umi_count(abc3) \n
                 out_string += str(len(result_dict[bc][abc])) + '\t'
                 # Add number of UMI:s
-                abc_counter_umi[abc].append(len(result_dict[bc][abc].keys()))
-                # Add number of reads
-                abc_counter_read[abc].append(sum(result_dict[bc][abc].values()))
+                if sum(result_dict[bc][abc].values()) >= args.filter:
+                    abc_counter_umi[abc].append(len(result_dict[bc][abc].keys()))
+                    # Add number of reads
+                    abc_counter_read[abc].append(sum(result_dict[bc][abc].values()))
+                    # If not enough reads, remove entry
+                #else:
+                #    del result_dict[bc][abc]
+
             openout.write(out_string + '\n')
+
+    #for bc in result_dict.copy():
+    #    #for abc in result_dict.copy()[bc]:
+    #    #    result_dict = dict_clearer(result_dict[bc][abc])
+    #    input = result_dict[bc]
+    #    result_dict = dict_clearer(input)
+
 
     # Reporting stats to terminal
     print()
@@ -101,6 +113,21 @@ def main():
     plot_density_correlation_matrix(args.read_plot,read_dict_for_plotting)
     plot_density_correlation_matrix(args.umi_plot,umi_dict_for_plotting)
     report_progress("Finished")
+
+def dict_clearer(dictionary):
+    """
+    Takes a dictionary and removed any keys which does not have any values
+    :param dictionary:
+    :return:
+    """
+
+    print(dictionary)
+
+    for key, val in dictionary.copy().items():
+        if len(val) == 0:
+            del dictionary[key]
+
+    return dictionary
 
 def n50_counter(input_list):
     """
@@ -429,6 +456,8 @@ class readArgs(object):
         parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
                                                                            "Not recommended due to different function "
                                                                            "names in python 2 and 3.")
+        parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
+                                                                        "to be included in output. DEFAULT: 0")
 
         args = parser.parse_args()
 
