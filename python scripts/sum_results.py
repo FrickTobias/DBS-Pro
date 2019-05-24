@@ -89,13 +89,6 @@ def main():
 
             openout.write(out_string + '\n')
 
-    #for bc in result_dict.copy():
-    #    #for abc in result_dict.copy()[bc]:
-    #    #    result_dict = dict_clearer(result_dict[bc][abc])
-    #    input = result_dict[bc]
-    #    result_dict = dict_clearer(input)
-
-
     # Reporting stats to terminal
     print()
     report_progress("Tot DBS count:\t" + str(len(result_dict.keys())))
