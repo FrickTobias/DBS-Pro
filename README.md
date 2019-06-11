@@ -7,7 +7,7 @@ This pipeline analyses data sequencing data from DBSpro experiments for protein 
 Download the pipeline by first navigating to where you want to put the DBSpro Analysis folder and clone the git repository.
 
 ```
-git clone https://github.com/FrickTobias/iSeq.git
+git clone https://github.com/FrickTobias/DBSpro.git
 ```
 #### Requirements
 
