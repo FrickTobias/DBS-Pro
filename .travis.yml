@@ -26,4 +26,4 @@ install:
   - conda activate testenv
   - pip install .
 
-script: tests/run.sh
+script: bash tests/run.sh
