@@ -197,4 +197,6 @@ python3 $DBSpro_path/python\ scripts/sum_results.py \
     $file_name".GCGTA.err_corr.fastq" \
     $file_name".ATAGC.err_corr.fastq" \
     $file_name".GTGCA.err_corr.fastq" \
-    $path"/result_summary.tsv"
+    $path"/result_summary.tsv" \
+    $path"/reads_plot.png" \
+    $path"/umi_plot.png"
