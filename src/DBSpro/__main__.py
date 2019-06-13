@@ -1,6 +1,6 @@
 import sys
 
-def main -> int:
+def main() -> int:
     print("Hello")
     return 0
 
