@@ -183,7 +183,7 @@ do
     # If file is empty, skip file (= No UMI:s found for that ABC)
     if [[ -s $file_name"."$err_corr_file".SC_out" ]]
     then
-        python3 $DBSpro_path/python\ scripts/sum_analysis_prep.py \
+        DBSpro correctfastq \
             $file_name"."$err_corr_file".fastq.gz" \
             $file_name"."$err_corr_file".SC_out" \
             $file_name"."$err_corr_file".err_corr.fastq"
@@ -192,7 +192,7 @@ do
     fi
 done
 
-python3 $DBSpro_path/python\ scripts/sum_results.py \
+DBSpro analyze \
     $file_name".DBS.err_corr.fastq" \
     $file_name".GCGTA.err_corr.fastq" \
     $file_name".ATAGC.err_corr.fastq" \
