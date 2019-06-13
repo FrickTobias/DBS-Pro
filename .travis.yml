@@ -9,10 +9,11 @@ cache:
 python:
   - "3.6"
 
-os:
-  - osx
-    language: generic
-  - linux
+matrix:
+  include:
+    - os: osx
+      language: generic
+    - linux
 
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
