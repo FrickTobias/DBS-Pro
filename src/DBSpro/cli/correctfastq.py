@@ -1,23 +1,12 @@
-#! /usr/bin/env python2
+"""
+Combines starcode output files into raw fastq files creating error corrected fastq files
+"""
+def main(args):
 
-def main():
-
-    #
-    # Imports & globals
-    #
-    global args, summaryInstance, sys, time, script_name, gzip
+    global sys, time, script_name, gzip
     import sys, time, gzip
 
     script_name = sys.argv[0].split('/')[-1].split('.')[0]
-
-    #
-    # Argument parsing
-    #
-    argumentsInstance = readArgs()
-
-    #
-    # Process data
-    #
 
     report_progress("Starting analysis")
     report_progress("Processing file " + args.err_corr)
@@ -284,81 +273,12 @@ class FastqRead(object):
         """
         return self.header + '\n' + self.seq  + '\n' + self.comment  + '\n' + self.qual + '\n'
 
-class readArgs(object):
-    """
-    Reads arguments and handles basic error handling like python version control etc.
-    """
+def add_arguments(parser):
+    parser.add_argument("raw_fastq", help="Fastq file with raw sequences.")
+    parser.add_argument("err_corr", help="Starcode default output with error corrected sequences.")
+    parser.add_argument("corr_fastq", help="Output file in fastq with error corrected sequences.")
 
-    def __init__(self):
-
-        readArgs.parse(self)
-        readArgs.pythonVersion(self)
-
-    def parse(self):
-
-        #
-        # Imports & globals
-        #
-        import argparse
-        global args
-
-        parser = argparse.ArgumentParser(description=__doc__)
-
-        # Arguments
-        parser.add_argument("raw_fastq", help="Fastq file with raw sequences.")
-        parser.add_argument("err_corr", help="Starcode default output with error corrected sequences.")
-        parser.add_argument("corr_fastq", help="Output file in fastq with error corrected sequences.")
-
-        # Options
-        parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
-                                                                           "Not recommended due to different function "
-                                                                           "names in python 2 and 3.")
-
-        args = parser.parse_args()
-
-    def pythonVersion(self):
-        """ Makes sure the user is running python 3."""
-
-        #
-        # Version control
-        #
-        import sys
-        if sys.version_info.major == 3:
-            pass
-        else:
-            sys.stderr.write('\nWARNING: you are running python ' + str(
-                sys.version_info.major) + ', this script is written for python 3.')
-            if not args.force_run:
-                sys.stderr.write('\nAborting analysis. Use -F (--Force) to run anyway.\n')
-                sys.exit()
-            else:
-                sys.stderr.write('\nForcing run. This might yield inaccurate results.\n')
-
-#class Summary(object):
-#
-#    def __init__(self):
-#
-#        self.variable = int()
-#
-#    def writeToStdErr(self):
-#        """
-#        Writes all object variables to stdout.
-#        """
-#
-#        for objectVariable, value in vars(self).items():
-#            sys.stderr.write('\n\n' + str(objectVariable) + '\n' + str(value))
-#        sys.stderr.write('\n')
-#
-#    def writeLog(self):
-#        """
-#        Writes all object variables to a log file (outfile.log)
-#        """
-#
-#        self.log = args.outfile + '.log'
-#        import time
-#        with open(self.log, 'w') as openout:
-#            openout.write(time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime()))
-#            for objectVariable, value in vars(self).items():
-#                openout.write('\n\n'+str(objectVariable) + '\n' + str(value))
-
-if __name__=="__main__": main()
+    # Options
+    parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
+                                                                       "Not recommended due to different function "
+                                                                       "names in python 2 and 3.")
