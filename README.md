@@ -37,3 +37,13 @@ bash DBSpro_automation.sh -p <processors> -m <email> reads.fq output_folder
 #### Advanced useage
 
 No advanced useage is currently available. 
+
+## Conda setup 
+
+First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) is installed on your system.
+
+Then create an environment and install required software for the dbspro package.
+
+```
+conda env creat -n dbspro -f environment.yml
+```
