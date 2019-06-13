@@ -1,4 +1,4 @@
-# Dependencies python=3.6 cutadapt starcode pysam seaborn numpy matplotlib snakemake-minimal
+# Dependencies python=3.6 cutadapt starcode pysam seaborn numpy matplotlib snakemake-minimal tqdm
 channels:
   - bioconda
   - r
