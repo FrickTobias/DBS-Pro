@@ -13,6 +13,7 @@ rule trim_3prime:
         " -e 0.2"
         " -j {threads}"
         " -o {output.reads}"
+        " {input.reads}"
         " > {log}"
 
 #rule extract_dbs:
