@@ -1,7 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
-threads=1
+
+threads="nej!"
+
+
+if  [[ "Linux" == $(uname) ]]
+then
+    threads=nproc
+elif [[ "Darwin" == $(uname) ]]
+then
+    threads=$(sysctl -n hw.ncpu)
+fi
 
 # Argparsing
 while getopts "t:h" OPTION
@@ -53,4 +63,4 @@ path=$ARG2
 mkdir -p $path
 
 ln -s $PWD/$ARG1 $path/reads.fastq.gz
-snakemake $path/umi-counts.txt $path/umi-density-plot.png $path/read-density-plot.png
+snakemake -j $threads $path/umi-counts.txt $path/umi-density-plot.png $path/read-density-plot.png
