@@ -1,3 +1,5 @@
+# Cutadapt trimming
+
 rule trim_3prime:
     "Trim 3' end for coupling sequence TTATATCACGACAAGAG."
     output:
@@ -33,6 +35,8 @@ rule extract_dbs:
         " -o {output.reads}"
         " {input.reads}"
         " > {log}"
+
+## ABCs
 
 rule identify_abc_1:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
@@ -91,6 +95,8 @@ rule identify_abc_3:
         " {input.reads}"
         " > {log}"
 
+# Starcode clustering
+
 rule dbs_cluster:
     "Cluster DBS sequence using starcode"
     output:
@@ -120,6 +126,8 @@ rule abc_cluster:
         " -t {threads}"
         " -d 1"
         " -o {output.clusters}"
+
+# DBSpro
 
 rule error_correct:
     "Combine cluster results with original files to error correct them."
