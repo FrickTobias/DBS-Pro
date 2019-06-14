@@ -124,12 +124,17 @@ cutadapt -a TTATATCACGACAAGAG \
 # H1+H2: CGATGCTAATCAGATCA
 # H3: AAGAGTCAATAGACCAT
 # H4: CTAACAGGATTCAGGTA
-cutadapt -g ^CGATGCTAATCAGATCA...AAGAGTCAATAGACCATCTAACAGGATTCAGGTA \
-    --discard-untrimmed \
-    -e 0.2 \
-    -j $processors \
-    -o $file_name".DBS.fastq.gz" \
-    $file_name".5prim.fastq.gz"  > $path/"bc_trim.log"
+
+ln -sr $ARG1 $path/reads.fastq.gz
+snakemake $path/trimmed-3prim.fastq.gz
+ln -sr $path/trimmed-3prim.fastq.gz $file_name".5prim.fastq.gz"
+
+#cutadapt -g ^CGATGCTAATCAGATCA...AAGAGTCAATAGACCATCTAACAGGATTCAGGTA \
+#    --discard-untrimmed \
+#    -e 0.2 \
+#    -j $processors \
+#    -o $file_name".DBS.fastq.gz" \
+#    $file_name".5prim.fastq.gz"  > $path/"bc_trim.log"
 
 # Trimming ABC/UMI file
 # Extracting barcode located between H1-H2 and H3-H4 (H1-H2-DBS-H3-H4-ABC-UMI-H5-i7)
