@@ -1,13 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-
-threads="nej!"
-
-
+threads=1
 if  [[ "Linux" == $(uname) ]]
 then
-    threads=nproc
+    threads=$(nproc)
 elif [[ "Darwin" == $(uname) ]]
 then
     threads=$(sysctl -n hw.ncpu)
