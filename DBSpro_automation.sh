@@ -56,7 +56,7 @@ fi
 DBSpro_path=$(dirname "$0")
 
 # output folder
-path=$ARG2
+path=$PWD$ARG2
 mkdir -p $path
 
 ln -s $PWD/$ARG1 $path/reads.fastq.gz
