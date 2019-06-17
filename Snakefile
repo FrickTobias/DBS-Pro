@@ -1,5 +1,7 @@
 # Cutadapt trimming
 
+ABC_list = ["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"]
+
 rule trim_3prime:
     "Trim 3' end for coupling sequence TTATATCACGACAAGAG."
     output:
@@ -36,6 +38,24 @@ rule extract_dbs:
         " {input.reads}"
         " > {log}"
 
+rule trim_to_abc:
+    "Trim 3' end for coupling sequence between DBS and ABC."
+    output:
+        reads="{dir}/trimmed-abc.fastq.gz"
+    input:
+        reads="{dir}/trimmed-3prim.fastq.gz"
+    log: "{dir}/reads-3prim.log"
+    threads: 20
+    shell:
+        "cutadapt"
+        " -g AAGAGTCAATAGACCATCTAACAGGATTCAGGTA"
+        " --discard-untrimmed"
+        " -e 0.2"
+        " -j {threads}"
+        " -o {output.reads}"
+        " {input.reads}"
+        " > {log}"
+
 ## ABCs
 
 rule identify_abc_1:
@@ -43,7 +63,7 @@ rule identify_abc_1:
     output:
         reads="{dir}/ABC1-GCGTA-UMI.fastq.gz"
     input:
-        reads="{dir}/dbs.fastq.gz"
+        reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-abc1.log"
     threads: 20
     shell:
@@ -62,7 +82,7 @@ rule identify_abc_2:
     output:
         reads="{dir}/ABC2-ATAGC-UMI.fastq.gz"
     input:
-        reads="{dir}/dbs.fastq.gz"
+        reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-abc2.log"
     threads: 20
     shell:
@@ -81,7 +101,7 @@ rule identify_abc_3:
     output:
         reads="{dir}/ABC3-GTGCA-UMI.fastq.gz"
     input:
-        reads="{dir}/dbs.fastq.gz"
+        reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-abc3.log"
     threads: 20
     shell:
@@ -106,22 +126,22 @@ rule dbs_cluster:
     log: "{dir}/dbs-clusters.log"
     threads: 20
     shell:
-        "pigz -cd | starcode"
+        "pigz -cd {input.reads} | starcode"
         " --print-clusters"
         " -t {threads}"
-        " -d 3"
+        " -d 2"
         " -o {output.clusters}"
 
 rule abc_cluster:
     "Cluster ABC sequence using starcode"
     output:
-        clusters=expand("{{dir}}/{ABC}-UMI-clusters.txt", ABC=["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"])
+        clusters=expand("{{dir}}/{ABC}-UMI-clusters.txt", ABC=ABC_list)
     input:
         reads=expand("{{dir}}/{ABC}-UMI.fastq.gz", ABC=["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"])
     log: "{dir}/abc-clusters.log"
     threads: 20
     shell:
-        "pigz -cd | starcode"
+        "pigz -cd {input.reads} | starcode"
         " --print-clusters"
         " -t {threads}"
         " -d 1"
@@ -159,6 +179,7 @@ rule analyze:
     threads: 20
     shell:
         "DBSpro analyze"
+        " -f 4"
         " input.dbs_fastq"
         " input.abc1_fastq"
         " input.abc2_fastq"
