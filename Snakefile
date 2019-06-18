@@ -132,20 +132,24 @@ rule dbs_cluster:
         " -d 2"
         " -o {output.clusters}"
 
+rule all:
+    "Define what files should be run for starcode for error correction of UMI:s"
+    input: dynamic("{dir}/{abc}-UMI.fastq.gz")
+
 rule abc_cluster:
     "Cluster ABC sequence using starcode"
     output:
-        clusters=expand("{{dir}}/{ABC}-UMI-clusters.txt", ABC=ABC_list)
+        "{dir}/{abc}-UMI-clusters.txt"
     input:
-        reads=expand("{{dir}}/{ABC}-UMI.fastq.gz", ABC=["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"])
-    log: "{dir}/abc-clusters.log"
+        "{dir}/{abc}-UMI.fastq.gz"
+    log: "{dir}/{abc}-clusters.log"
     threads: 20
     shell:
-        "pigz -cd {input.reads} | starcode"
+        "pigz -cd {input} | starcode"
         " --print-clusters"
         " -t {threads}"
         " -d 1"
-        " -o {output.clusters}"
+        " -o {output}"
 
 # DBSpro
 
