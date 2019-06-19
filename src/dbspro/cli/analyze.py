@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 
-import DBSpro.utils as DBSpro
+import dbspro.utils as dbspro
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def main(args):
     logger.info("Starting analysis")
     logger.info("Saving DBS information to RAM")
 
-    generator = DBSpro.FileReader(args.dbs)
+    generator = dbspro.FileReader(args.dbs)
     bc_dict = dict()
     for read in tqdm(generator.fastqReader()):
         bc_dict[read.header] = read.seq
@@ -34,7 +34,7 @@ def main(args):
     umi_without_proper_bc = int()
     for current_abc in abc_list:
         logger.info("Reading file\t" + str(current_abc))
-        generator = DBSpro.FileReader(current_abc)
+        generator = dbspro.FileReader(current_abc)
 
         # Loop over reads in file, where read.seq = umi
         for read in tqdm(generator.fastqReader()):

@@ -2,7 +2,7 @@
 
 # DBSpro Analysis
 
-This pipeline analyses data sequencing data from DBSpro experiments for protein and PrEST quantification.
+This pipeline analyses data sequencing data from DBS-Pro experiments for protein and PrEST quantification.
 
 ## Setup
 
@@ -11,7 +11,7 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 - Clone the git repostory.
 
     ```
-    git clone https://github.com/FrickTobias/DBSpro
+    git clone https://github.com/FrickTobias/DBS-Pro
     ```
 
 - Create an environment and with required dependencies. 
@@ -29,7 +29,7 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 - Move to the git folder and install dbspro into you environment.
 
     ```
-    cd DBSpro
+    cd DBS-Pro
     pip install -e .
     ```
 
@@ -38,5 +38,5 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 Basic usage
 
 ```
-bash DBSpro_automation.sh -t <threads> raw-reads.fq output-folder
+bash DBS-Pro_automation.sh -t <threads> raw-reads.fq output-folder
 ```

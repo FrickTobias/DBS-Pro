@@ -118,7 +118,7 @@ rule abc_cluster:
         " -d 1"
         " -o {output}"
 
-# DBSpro
+# DBS-Pro
 
 rule error_correct:
     "Combine cluster results with original files to error correct them."
@@ -130,7 +130,7 @@ rule error_correct:
     log: "{dir}/{corr_file}error-correct.log"
     threads: 20
     shell:
-        "DBSpro correctfastq"
+        "DBS-Pro correctfastq"
         " {input.reads}"
         " {input.clusters}"
         " {output.reads}"
@@ -147,7 +147,7 @@ rule analyze:
     log: "{dir}/analyze.log"
     threads: 20
     shell:
-        "DBSpro analyze"
+        "DBS-Pro analyze"
         " -f 4"
         " {input.dbs_fastq}"
         " {output.counts}"
