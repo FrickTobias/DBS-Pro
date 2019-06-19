@@ -2,20 +2,20 @@
 Combines starcode output files into raw fastq files creating error corrected fastq files
 """
 import logging
-import sys
-import gzip
 
 from tqdm import tqdm
 
-import DBSpro.utils as DBSpro
+import dbspro.utils as dbspro
+
 
 logger = logging.getLogger(__name__)
+
 
 def main(args):
 
     logger.info("Starting analysis")
     logger.info("Processing file " + args.err_corr)
-    generator = DBSpro.FileReader(args.err_corr)
+    generator = dbspro.FileReader(args.err_corr)
     err_corr = dict()
     for line in tqdm(generator.fileReader()):
 
@@ -31,7 +31,7 @@ def main(args):
     logger.info("Error corrected sequenced parsed.")
 
     logger.info("Correcting sequences and writing to output file.")
-    generator = DBSpro.FileReader(args.raw_fastq)
+    generator = dbspro.FileReader(args.raw_fastq)
     no_err_corr_seq = int()
     tot_reads = int()
     corr_seqs = int()

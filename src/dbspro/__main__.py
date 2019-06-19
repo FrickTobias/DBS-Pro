@@ -1,5 +1,5 @@
 """
-DBSpro is a pipeline for processing DBSpro data.
+DBS-Pro is a pipeline for processing DBS-Pro data.
 """
 import sys
 import logging
@@ -7,14 +7,14 @@ import pkgutil
 import importlib
 from argparse import ArgumentParser
 
-import DBSpro.cli as cli_package
+import dbspro.cli as cli_package
 
 logger = logging.getLogger(__name__)
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s\t%(module)s\t%(levelname)s: %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
-    parser = ArgumentParser(description=__doc__, prog="DBSpro")
+    parser = ArgumentParser(description=__doc__, prog="dbspro")
     parser.add_argument("--version", action="version", version="%(prog)s 0.1")
     subparsers = parser.add_subparsers()
 

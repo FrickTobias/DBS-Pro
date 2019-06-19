@@ -19,9 +19,9 @@ do
             threads=${OPTARG}
             ;;
         h)
-            printf 'DBSpro_automation.sh
+            printf 'DBS-Pro_automation.sh
 
-Useage:     bash DBSpro_automation.sh <options> <reads.fq> <output_dir>
+Useage:     bash DBS-Pro_automation.sh <options> <reads.fq> <output_dir>
 NB:         options must be given before arguments.
 
 Positional arguments (REQUIRED)
@@ -49,11 +49,8 @@ then
     echo "Did not find all positional arguments, see -h for more information."
     echo "(got reads:"$ARG1" and output:"$ARG2" instead)"
     echo ""
-    exit 0e
+    exit 0
 fi
-
-# PATH to WGH_Analysis folder
-DBSpro_path=$(dirname "$0")
 
 # output folder
 path=$PWD/$ARG2
