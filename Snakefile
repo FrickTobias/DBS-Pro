@@ -57,55 +57,17 @@ rule trim_to_abc:
 
 ## ABCs
 
-rule identify_abc_1:
+rule identify_abc:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/ABC1-GCGTA-UMI-raw.fastq.gz"
+        reads="{dir}/{abc}-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/id-abc1.log"
+    log: "{dir}/id-{abc}.log"
     threads: 20
     shell:
         "cutadapt"
-        " -g ^GCGTA"
-        " -m 6"
-        " -M 6"
-        " -e 0.2"
-        " -j {threads}"
-        " -o {output.reads}"
-        " {input.reads}"
-        " > {log}"
-
-rule identify_abc_2:
-    "Identifies ABC and trims it to give ABC-specific UMI fastq files."
-    output:
-        reads="{dir}/ABC2-ATAGC-UMI-raw.fastq.gz"
-    input:
-        reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/id-abc2.log"
-    threads: 20
-    shell:
-        "cutadapt"
-        " -g ^ATAGC"
-        " -m 6"
-        " -M 6"
-        " -e 0.2"
-        " -j {threads}"
-        " -o {output.reads}"
-        " {input.reads}"
-        " > {log}"
-
-rule identify_abc_3:
-    "Identifies ABC and trims it to give ABC-specific UMI fastq files."
-    output:
-        reads="{dir}/ABC3-GTGCA-UMI-raw.fastq.gz"
-    input:
-        reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/id-abc3.log"
-    threads: 20
-    shell:
-        "cutadapt"
-        " -g ^GTGCA"
+        " -g ^{wildcards.abc}"
         " -m 6"
         " -M 6"
         " -e 0.2"
@@ -130,9 +92,6 @@ rule dbs_cluster:
         " -t {threads}"
         " -d 2"
         " -o {output.clusters}"
-
-
-#ABC_list = ["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"]
 
 rule abc_cluster:
     "Cluster ABC sequence using starcode"
@@ -174,9 +133,9 @@ rule analyze:
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fastq="{dir}/dbs-corrected.fastq",
-        abc1_fastq="{dir}/ABC1-GCGTA-UMI-corrected.fastq",
-        abc2_fastq="{dir}/ABC2-ATAGC-UMI-corrected.fastq",
-        abc3_fastq="{dir}/ABC3-GTGCA-UMI-corrected.fastq"
+        abc1_fastq="{dir}/GCGTA-UMI-corrected.fastq",
+        abc2_fastq="{dir}/ATAGC-UMI-corrected.fastq",
+        abc3_fastq="{dir}/GTGCA-UMI-corrected.fastq"
     log: "{dir}/analyze.log"
     threads: 20
     shell:
