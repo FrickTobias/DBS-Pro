@@ -1,8 +1,18 @@
+import pandas as pd
+from snakemake.utils import validate
+
+configfile: "config.yaml"
+#validate(config, "config.schema.yaml")
+
+abc = pd.read_csv(config["ABC-sequences"], sep='\t').set_index("Antibody-target", drop=False)
+handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
+#validate(samples, "samples.schema.yaml")
+
+
 # Cutadapt trimming
 
-
 rule trim_3prime:
-    "Trim 3' end for coupling sequence TTATATCACGACAAGAG."
+    "Trim 3' end up to UMI."
     output:
         reads="{dir}/trimmed-3prim.fastq.gz"
     input:
@@ -11,7 +21,7 @@ rule trim_3prime:
     threads: 20
     shell:
         "cutadapt"
-        " -a TTATATCACGACAAGAG"
+        " -a {handles[Sequence][h3]}"
         " --discard-untrimmed"
         " -e 0.2"
         " -j {threads}"
@@ -20,7 +30,7 @@ rule trim_3prime:
         " > {log}"
 
 rule extract_dbs:
-    "Extract DBS and trim handle between DBS and ABC. H1+H2: CGATGCTAATCAGATCA, H3: AAGAGTCAATAGACCAT, H4: CTAACAGGATTCAGGTA"
+    "Extract DBS and trim handle between DBS and ABC."
     output:
         reads="{dir}/dbs-raw.fastq.gz"
     input:
@@ -29,7 +39,7 @@ rule extract_dbs:
     threads: 20
     shell:
         "cutadapt"
-        " -g ^CGATGCTAATCAGATCA...AAGAGTCAATAGACCATCTAACAGGATTCAGGTA"
+        " -g ^{handles[Sequence][h1]}...{handles[Sequence][h2]}"
         " --discard-untrimmed"
         " -e 0.2"
         " -j {threads}"
@@ -47,7 +57,7 @@ rule trim_to_abc:
     threads: 20
     shell:
         "cutadapt"
-        " -g AAGAGTCAATAGACCATCTAACAGGATTCAGGTA"
+        " -g {handles[Sequence][h2]}"
         " --discard-untrimmed"
         " -e 0.2"
         " -j {threads}"
@@ -133,18 +143,14 @@ rule analyze:
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fastq="{dir}/dbs-corrected.fastq",
-        abc1_fastq="{dir}/GCGTA-UMI-corrected.fastq",
-        abc2_fastq="{dir}/ATAGC-UMI-corrected.fastq",
-        abc3_fastq="{dir}/GTGCA-UMI-corrected.fastq"
+        abc_fastqs=expand("{{dir}}/{abc}-UMI-corrected.fastq", abc=abc["Barcode-sequence"])
     log: "{dir}/analyze.log"
     threads: 20
     shell:
         "DBSpro analyze"
         " -f 4"
         " {input.dbs_fastq}"
-        " {input.abc1_fastq}"
-        " {input.abc2_fastq}"
-        " {input.abc3_fastq}"
         " {output.counts}"
         " {output.umi_plot}"
         " {output.reads_plot}"
+        " {input.abc_fastqs}"
