@@ -6,7 +6,7 @@ with open("README.md") as f:
 setup(
     name="DBS-Pro",
     author="Tobias Frick",
-    url="https://github.com/TobiasFrick/DBSpro/",
+    url="https://github.com/TobiasFrick/DBS-Pro/",
     description="DBS-Pro pipeline",
     long_description=long_description,
     long_description_content_type="text/markdown",
