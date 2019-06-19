@@ -1,6 +1,5 @@
 # Cutadapt trimming
 
-ABC_list = ["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"]
 
 rule trim_3prime:
     "Trim 3' end for coupling sequence TTATATCACGACAAGAG."
@@ -23,7 +22,7 @@ rule trim_3prime:
 rule extract_dbs:
     "Extract DBS and trim handle between DBS and ABC. H1+H2: CGATGCTAATCAGATCA, H3: AAGAGTCAATAGACCAT, H4: CTAACAGGATTCAGGTA"
     output:
-        reads="{dir}/dbs.fastq.gz"
+        reads="{dir}/dbs-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-3prim.fastq.gz"
     log: "{dir}/extract-dbs.log"
@@ -61,7 +60,7 @@ rule trim_to_abc:
 rule identify_abc_1:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/ABC1-GCGTA-UMI.fastq.gz"
+        reads="{dir}/ABC1-GCGTA-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-abc1.log"
@@ -80,7 +79,7 @@ rule identify_abc_1:
 rule identify_abc_2:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/ABC2-ATAGC-UMI.fastq.gz"
+        reads="{dir}/ABC2-ATAGC-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-abc2.log"
@@ -99,7 +98,7 @@ rule identify_abc_2:
 rule identify_abc_3:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/ABC3-GTGCA-UMI.fastq.gz"
+        reads="{dir}/ABC3-GTGCA-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-abc3.log"
@@ -122,7 +121,7 @@ rule dbs_cluster:
     output:
         clusters="{dir}/dbs-clusters.txt"
     input:
-        reads="{dir}/dbs.fastq.gz"
+        reads="{dir}/dbs-raw.fastq.gz"
     log: "{dir}/dbs-clusters.log"
     threads: 20
     shell:
@@ -132,17 +131,16 @@ rule dbs_cluster:
         " -d 2"
         " -o {output.clusters}"
 
-rule all:
-    "Define what files should be run for starcode for error correction of UMI:s"
-    input: dynamic("{dir}/{abc}-UMI.fastq.gz")
+
+#ABC_list = ["ABC1-GCGTA" , "ABC2-ATAGC", "ABC3-GTGCA"]
 
 rule abc_cluster:
     "Cluster ABC sequence using starcode"
     output:
-        "{dir}/{abc}-UMI-clusters.txt"
+        "{dir}/{sample}-UMI-clusters.txt"
     input:
-        "{dir}/{abc}-UMI.fastq.gz"
-    log: "{dir}/{abc}-clusters.log"
+        "{dir}/{sample}-UMI-raw.fastq.gz"
+    log: "{dir}/{sample}-clusters.log"
     threads: 20
     shell:
         "pigz -cd {input} | starcode"
@@ -156,17 +154,17 @@ rule abc_cluster:
 rule error_correct:
     "Combine cluster results with original files to error correct them."
     output:
-        reads=expand("{{dir}}/{corr_file}-corrected.fastq.gz", corr_file=["dbs", "ABC1-GCGTA-UMI", "ABC2-ATAGC-UMI", "ABC3-GTGCA-UMI"])
+        reads="{dir}/{corr_file}-corrected.fastq"
     input:
-        reads=expand("{{dir}}/{corr_file}.fastq.gz", corr_file=["dbs", "ABC1-GCGTA-UMI", "ABC2-ATAGC-UMI", "ABC3-GTGCA-UMI"]),
-        clusters=expand("{{dir}}/{corr_file}-clusters.txt", corr_file=["dbs", "ABC1-GCGTA-UMI", "ABC2-ATAGC-UMI", "ABC3-GTGCA-UMI"])
-    log: "{dir}/error-correct.log"
+        reads="{dir}/{corr_file}-raw.fastq.gz",
+        clusters="{dir}/{corr_file}-clusters.txt"
+    log: "{dir}/{corr_file}error-correct.log"
     threads: 20
     shell:
         "DBSpro correctfastq"
-        " input.reads"
-        " input.clusters"
-        " output.reads"
+        " {input.reads}"
+        " {input.clusters}"
+        " {output.reads}"
 
 rule analyze:
     "Analyzes all result files"
@@ -175,19 +173,19 @@ rule analyze:
         umi_plot="{dir}/umi-density-plot.png",
         reads_plot="{dir}/read-density-plot.png"
     input:
-        dbs_fastq="{dir}/dbs-corrected.fastq.gz",
-        abc1_fastq="{dir}/ABC1-GCGTA-UMI-corrected.fastq.gz",
-        abc2_fastq="{dir}/ABC2-ATAGC-UMI-corrected.fastq.gz",
-        abc3_fastq="{dir}/ABC3-GTGCA-UMI-corrected.fastq.gz"
+        dbs_fastq="{dir}/dbs-corrected.fastq",
+        abc1_fastq="{dir}/ABC1-GCGTA-UMI-corrected.fastq",
+        abc2_fastq="{dir}/ABC2-ATAGC-UMI-corrected.fastq",
+        abc3_fastq="{dir}/ABC3-GTGCA-UMI-corrected.fastq"
     log: "{dir}/analyze.log"
     threads: 20
     shell:
         "DBSpro analyze"
         " -f 4"
-        " input.dbs_fastq"
-        " input.abc1_fastq"
-        " input.abc2_fastq"
-        " input.abc3_fastq"
-        " output.counts"
-        " output.umi_plot"
-        " output.reads.plot"
+        " {input.dbs_fastq}"
+        " {input.abc1_fastq}"
+        " {input.abc2_fastq}"
+        " {input.abc3_fastq}"
+        " {output.counts}"
+        " {output.umi_plot}"
+        " {output.reads_plot}"
