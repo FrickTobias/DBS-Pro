@@ -1,3 +1,13 @@
+import pandas as pd
+from snakemake.utils import validate
+
+configfile: "config.yaml"
+#validate(config, "config.schema.yaml")
+
+abc = pd.read_csv(config["ABC-sequences"], sep='\t').set_index("Antibody-target", drop=False)
+#validate(samples, "samples.schema.yaml")
+
+
 # Cutadapt trimming
 
 
@@ -133,9 +143,7 @@ rule analyze:
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fastq="{dir}/dbs-corrected.fastq",
-        abc1_fastq="{dir}/GCGTA-UMI-corrected.fastq",
-        abc2_fastq="{dir}/ATAGC-UMI-corrected.fastq",
-        abc3_fastq="{dir}/GTGCA-UMI-corrected.fastq"
+        abc_fastqs=expand("{{dir}}/{abc}-UMI-corrected.fastq", abc=abc["Barcode-sequence"])
     log: "{dir}/analyze.log"
     threads: 20
     shell:
@@ -145,6 +153,4 @@ rule analyze:
         " {output.counts}"
         " {output.umi_plot}"
         " {output.reads_plot}"
-        " {input.abc1_fastq}"
-        " {input.abc2_fastq}"
-        " {input.abc3_fastq}"
+        " {input.abc_fastqs}"
