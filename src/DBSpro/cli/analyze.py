@@ -30,7 +30,7 @@ def main(args):
     # Counting UMI:s found in the different ABC:s for all barcodes.
     logger.info("Calculating stats")
     result_dict = dict()
-    abc_list = [args.umi_1, args.umi_2, args.umi_3]
+    abc_list = args.umi_abc
     umi_without_proper_bc = int()
     for current_abc in abc_list:
         logger.info("Reading file\t" + str(current_abc))
@@ -176,15 +176,11 @@ def add_arguments(parser):
 
     # Arguments
     parser.add_argument("dbs", help="Reads with only DBS seq in fastq format.")
-    parser.add_argument("umi_1", help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 1 in fastq format")
-    parser.add_argument("umi_2", help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 2 in fastq format")
-    parser.add_argument("umi_3", help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 3 in fastq format")
     parser.add_argument("output", help="output file")
     parser.add_argument("read_plot", help="Filename for output reads/DBS pair plot (will be .png)")
     parser.add_argument("umi_plot", help="Filename for output UMI:s/DBS pair plot (will be .png)")
+    parser.add_argument("umi_abc", nargs='+',
+                        help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 1 in fastq format")
     # Options
-    parser.add_argument("-F", "--force_run", action="store_true", help="Run analysis even if not running python 3. "
-                                                                       "Not recommended due to different function "
-                                                                       "names in python 2 and 3.")
     parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
                                                                     "to be included in output. DEFAULT: 0")
