@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/FrickTobias/DBSpro.svg?branch=master)](https://travis-ci.org/FrickTobias/DBSpro)
 
-# DBSpro Analysis
+# DBS-Pro Analysis
 
 This pipeline analyses data sequencing data from DBS-Pro experiments for protein and PrEST quantification.
 
