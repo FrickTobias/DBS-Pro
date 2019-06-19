@@ -6,44 +6,37 @@ This pipeline analyses data sequencing data from DBSpro experiments for protein 
 
 ## Setup
 
-Download the pipeline by first navigating to where you want to put the DBSpro Analysis folder and clone the git repository.
+First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) is installed on your system.
 
-```
-git clone https://github.com/FrickTobias/DBSpro.git
-```
-#### Requirements
+- Clone the git repostory.
 
-To run the pipeline make sure you have the following required softwares.
+    ```
+    git clone https://github.com/FrickTobias/DBSpro
+    ```
 
-- [cutadapt]()
-- [starcode]()
-- [pigz]()
-- [mail]()
+- Create an environment and with required dependencies. 
 
-Furthermore some python modules are required to be installed under your python 3 installation.
+    ```
+    conda env create -n dbspro -f environment.yml
+    ```
 
-- [numpy]()
-- [pandas]()
-- [seaborn]()
+- Activate the environment.
+
+    ```
+    conda activate dbspro
+    ```
+
+- Move to the git folder and install dbspro into you environment.
+
+    ```
+    cd DBSpro
+    pip install -e .
+    ```
 
 ## Useage
 
-To run the pipeline write the following command.
+Basic usage
 
 ```
-bash DBSpro_automation.sh -p <processors> -m <email> reads.fq output_folder
-```
-
-#### Advanced useage
-
-No advanced useage is currently available. 
-
-## Conda setup 
-
-First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) is installed on your system.
-
-Then create an environment and install required software for the dbspro package.
-
-```
-conda env creat -n dbspro -f environment.yml
+bash DBSpro_automation.sh -t <threads> raw-reads.fq output-folder
 ```
