@@ -14,7 +14,7 @@ setup(
     python_requires=">=3.6",
     package_dir={"": "src"},
     packages=find_namespace_packages("src"),
-    entry_points={"console_scripts": ["DBS-Pro = dbspro.__main__:main"]},
+    entry_points={"console_scripts": ["dbspro = dbspro.__main__:main"]},
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
