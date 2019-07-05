@@ -130,7 +130,7 @@ rule error_correct:
     log: "{dir}/{corr_file}error-correct.log"
     threads: 20
     shell:
-        "DBS-Pro correctfastq"
+        "dbspro correctfastq"
         " {input.reads}"
         " {input.clusters}"
         " {output.reads}"
@@ -147,7 +147,7 @@ rule analyze:
     log: "{dir}/analyze.log"
     threads: 20
     shell:
-        "DBS-Pro analyze"
+        "dbspro analyze"
         " -f 4"
         " {input.dbs_fastq}"
         " {output.counts}"
