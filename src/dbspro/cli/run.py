@@ -35,7 +35,7 @@ def main(args):
         args.targets = ['umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png']
 
     # Append full path to targets.
-    targets_with_path = [args.directory / t for t in args.targets]
+    targets_with_path = [str(args.directory / t) for t in args.targets]
 
     # Check if correct file exists in output directory.
     # If not, try using the input fastq argument if given.
@@ -56,6 +56,7 @@ def main(args):
 
         # Create symbolic link to file in output directory.
         os.symlink(args.fastq, args.directory / accepted_file)
+        logging.info('Creating symbolic link for input file in output directory.')
     else:
         raise FileNotFoundError(f'Required file not found in folder or given as input.')
 
