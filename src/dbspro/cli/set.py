@@ -11,42 +11,56 @@ logger = logging.getLogger(__name__)
 
 def main(args):
 
+    # Print constrict info
     if args.print_structure:
         print("h1-DBS-h2-ABC-UMI-h3\n"
               "DBS length: 20\n"
               "UMI length: 6")
         sys.exit()
 
-    outline = str()
+    # Read existing file
     unchanged = True
     infile = file_name_fetcher(construct=args.construct)
+    outdict = dict()
     with open(infile, "r") as openin:
         for line in openin:
             key, value = line.split()
-
-            # Only prints current sequences
             if args.show_sequences:
-                logger.info(key + ' ' + value)
+                logger.info(f"{key} {value}")
+            else:
+                outdict[key] = value
 
-            # Change the construct specified to new seq
-            elif args.construct == key:
-                logger.info("Changing " + args.construct)
-                logger.info("Prev sequence: " + value)
-                logger.info("New sequence: " + args.sequence)
-                if value == args.sequence:
-                   logger.warning("Previous and new sequence is identical")
+    # Modify file
+    if not args.show_sequences:
 
-                value = args.sequence
+        # Modify dictionary
+        if args.construct in outdict:
+            # Remove
+            if args.remove:
+                logger.info(f"Removing {args.construct} from {infile}")
+                del outdict[args.construct]
                 unchanged = False
+            # Change
+            elif outdict[args.construct] == args.sequence:
+                pass
+            else:
+                logger.info(f"Changing {args.construct} to {args.sequence}")
+                outdict[args.construct] = args.sequence
+                unchanged = False
+        # Add
+        elif args.add:
+            logger.info(f"Adding {args.construct} {args.sequence} to {infile}")
+            outdict[args.construct] = args.sequence
+            unchanged = False
 
-            outline += (key + "\t" + value + "\n")
-
-    if unchanged:
-        logger.error(f"Invalid construct name, file unchanged ({args.construct})")
-        sys.exit()
-    else:
-        with open(infile, 'w') as openout:
-            openout.write(outline)
+        # Write output
+        if unchanged:logger.error(f"File has not been changed, please review your arguments. (construct: "
+                                  f"{args.construct}, seuqence: {args.sequence})")
+        else:
+            with open(infile, 'w') as openout:
+                openout.write("Antibody-target\tBarcode-sequence\n")
+                for key, value in outdict.items():
+                    openout.write(f"{key}\t{value}\n")
 
 
 def file_name_fetcher(construct):
@@ -76,3 +90,7 @@ def add_arguments(parser):
     parser.add_argument("-s","--show_sequences", action="store_true", help="Show all sequences currently set for the "
                                                                            "handles or ABC, depending on the <construct> "
                                                                            "argument")
+    parser.add_argument("-a","--add", action="store_true", help="Add ABC sequence instead of change it. Will fail if "
+                                                                "used with an already existing construct name.")
+    parser.add_argument("-r","--remove", action="store_true", help="Remove ABC sequence instead of change it. Will fail "
+                                                                   "if construct name is not found.")
