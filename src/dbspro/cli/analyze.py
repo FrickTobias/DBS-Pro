@@ -3,7 +3,6 @@ Analyzes demultiplexed and error corrected data
 """
 
 import logging
-import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -13,6 +12,8 @@ from collections import defaultdict
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
+
+# TODO Fix so that ABC are labeled with name from config file instead of file name.
 
 
 def main(args):
@@ -73,7 +74,7 @@ def main(args):
 
         output_list.append(output_line)
 
-    df_out = pd.DataFrame(output_list)
+    df_out = pd.DataFrame(output_list, columns=["BC"] + sorted(args.umi_abc)).set_index("BC", drop=True)
     df_out.to_csv(args.output, sep="\t")
 
     logger.info(f"Tot DBS count: {len(result_dict)}")
@@ -82,12 +83,13 @@ def main(args):
     data_to_print = list()
     for abc in args.umi_abc:
         data_to_print.append({
-            "ABC": abc,
+            "ABC": abc[-25:],
             "Total # UMI": sum(abc_counter_umi[abc]),
             "N50(UMI/DBS)": n50_counter(abc_counter_umi[abc]),
             "Total # Reads": sum(abc_counter_read[abc]),
             "N50(Reads/DBS)": n50_counter(abc_counter_read[abc])
         })
+
     print("\nRESULTS")
     df_data = pd.DataFrame(data_to_print).set_index("ABC", drop=True)
     print(df_data)
@@ -95,9 +97,12 @@ def main(args):
 
     # Plotting
     logger.info("Prepping data for plot")
+
     read_dict_for_plotting, umi_dict_for_plotting = format_data_for_plotting(result_dict)
+
     plot_density_correlation_matrix(args.read_plot, read_dict_for_plotting, args.umi_abc)
     plot_density_correlation_matrix(args.umi_plot, umi_dict_for_plotting, args.umi_abc)
+
     logger.info("Finished")
 
 
@@ -138,38 +143,36 @@ def format_data_for_plotting(result_dict):
 
 def plot_density_correlation_matrix(name, result_dict, abc_names):
     """
-
-    :param x:
-    :param y:
-    :param z:
+    Plot density correlation matrix.
+    :param name:
+    :param result_dict:
+    :param abc_names:
     :return:
     """
+    df_list = [dbs_dict for dbs_dict in result_dict.values()]
 
-    df_list = list()
-    for dbs_dict in result_dict.values():
-        df_list.append(dbs_dict)
     df = pd.DataFrame(df_list, columns=abc_names)
     g = sns.pairplot(df, diag_kind="kde", diag_kws=dict(shade=True, bw=.05, vertical=False))
 
-    for x in range(3):
-        for y in range(3):
-            g.axes[x,y].set_xlim((0, 50))
-            g.axes[x,y].set_ylim((0, 50))
-    logger.info("Plotting " + name)
+    for x in range(len(abc_names)):
+        for y in range(len(abc_names)):
+            g.axes[x, y].set_xlim((0, 50))
+            g.axes[x, y].set_ylim((0, 50))
 
-    my_path = os.path.abspath(__file__)
+    logger.info(f"Plotting: {name}")
+
     plt.savefig(name)
 
 
 def add_arguments(parser):
-
     # Arguments
     parser.add_argument("dbs", help="Reads with only DBS seq in fastq format.")
     parser.add_argument("output", help="output file")
     parser.add_argument("read_plot", help="Filename for output reads/DBS pair plot (will be .png)")
     parser.add_argument("umi_plot", help="Filename for output UMI:s/DBS pair plot (will be .png)")
     parser.add_argument("umi_abc", nargs='+',
-                        help="Reads with only UMI seq (unique molecular identifier) file for ABC (antibody barcode) 1 in fastq format")
+                        help="Reads with only UMI seq (unique molecular identifier) for ABC (antibody barcode) files"
+                             " in fastq format")
     # Options
     parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
                                                                     "to be included in output. DEFAULT: 0")
