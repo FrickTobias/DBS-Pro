@@ -48,6 +48,6 @@ def add_arguments(parser):
                         help='File(s) to create (without paths). If omitted, the full pipeline is run.')
     parser.add_argument('-d', '--directory',
                         help='Path to directory in which to run pipeline and store output. '
-                             'Should contain input file (or symbolic link to file).')
-    parser.add_argument('-f','--force', default=False, action='store_true',
+                             'Should contain input fastq file (or symbolic link to file).')
+    parser.add_argument('-f', '--force', default=False, action='store_true',
                         help='Force to run analysis, removes existing analysis if present.')
