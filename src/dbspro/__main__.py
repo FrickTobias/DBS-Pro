@@ -13,11 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s\t%(module)s\t%(levelname)s: %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s\ - %(module)s - %(levelname)s: %(message)s",
+                        datefmt='%Y-%m-%d %H:%M:%S')
     parser = ArgumentParser(description=__doc__, prog="dbspro")
     parser.add_argument("--version", action="version", version="%(prog)s 0.1")
     subparsers = parser.add_subparsers()
-
 
     # Import each module that implements a subcommand and add a subparser for it.
     # Each subcommand is implemented as a module in the cli subpackage.
@@ -25,9 +26,9 @@ def main() -> int:
     modules = pkgutil.iter_modules(cli_package.__path__)
     for _, module_name, _ in modules:
         module = importlib.import_module("." + module_name, cli_package.__name__)
-        help = module.__doc__
+        help_message = module.__doc__
         subparser = subparsers.add_parser(
-            module_name, help=help, description=module.__doc__
+            module_name, help=help_message, description=module.__doc__
         )
         subparser.set_defaults(module=module)
         module.add_arguments(subparser)
@@ -41,6 +42,7 @@ def main() -> int:
         module.main(args)
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
