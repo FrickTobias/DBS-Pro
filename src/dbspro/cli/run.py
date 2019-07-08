@@ -80,7 +80,7 @@ def add_arguments(parser):
                         default=available_cpu_count(),
                         help="Maximum number of cores to run in parallel. Default: Use as manny as available.")
     parser.add_argument('targets', nargs='*', default=[], metavar='<TARGETS>',
-                        help='File(s) to create excluding paths). If omitted, the full pipeline is run.')
+                        help='File(s) to create excluding paths (If omitted, the full pipeline is run).')
     parser.add_argument('-d', '--directory', default=os.getcwd(), type=Path, metavar='<DIRECTORY>',
                         help='Path to directory in which to run pipeline and store output. Should contain input '
                              'fastq file (or symbolic link to file) unless given as argument. Default: CWD')
