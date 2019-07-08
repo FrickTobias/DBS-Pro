@@ -7,117 +7,104 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import dnaio
+import copy
+from collections import defaultdict
 from tqdm import tqdm
-
-import dbspro.utils as dbspro
-
 
 logger = logging.getLogger(__name__)
 
 
 def main(args):
     # Barcode processing
-    logger.info("Starting analysis")
-    logger.info("Saving DBS information to RAM")
+    logger.info(f"Starting analysis")
+    logger.info(f"Saving DBS information to RAM")
 
-    generator = dbspro.FileReader(args.dbs)
     bc_dict = dict()
-    for read in tqdm(generator.fastqReader()):
-        bc_dict[read.header] = read.seq
-    logger.info("Finished processing DBS sequences")
+    with dnaio.open(args.dbs, mode="r", fileformat="fastq") as reader:
+        for read in tqdm(reader):
+            bc_dict[read.name] = read.sequence
+    logger.info(f"Finished processing DBS sequences")
 
     # Counting UMI:s found in the different ABC:s for all barcodes.
-    logger.info("Calculating stats")
+    logger.info(f"Calculating stats")
     result_dict = dict()
-    abc_list = args.umi_abc
     umi_without_proper_bc = int()
-    for current_abc in abc_list:
-        logger.info("Reading file\t" + str(current_abc))
-        generator = dbspro.FileReader(current_abc)
+    for current_abc in args.umi_abc:
+        logger.info(f"Reading file: {current_abc}")
 
-        # Loop over reads in file, where read.seq = umi
-        for read in tqdm(generator.fastqReader()):
+        with dnaio.open(current_abc, mode="r", fileformat="fastq") as reader:
+            # Loop over reads in file, where read.seq = umi
+            for read in tqdm(reader):
 
-            # Try find UMI
-            try: bc = bc_dict[read.header]
-            except KeyError:
-                umi_without_proper_bc += 1
-                continue
+                # Try find UMI
+                try:
+                    bc = bc_dict[read.name]
+                except KeyError:
+                    umi_without_proper_bc += 1
+                    continue
 
-            # If not dbs in result dict, add it and give it a dictionary for every abc
-            if not bc in result_dict:
-                result_dict[bc] = dict()
-                for abc in abc_list:
-                    result_dict[bc][abc] = dict()
+                # If not dbs in result dict, add it and give it a dictionary for every abc
+                if bc not in result_dict:
+                    result_dict[bc] = {abc: defaultdict(int) for abc in args.umi_abc}
 
-            # Add +1 to corresponding UMI sequence
-            if not read.seq in result_dict[bc][abc]:
-                result_dict[bc][current_abc][read.seq] = int()
-            result_dict[bc][current_abc][read.seq] += 1
+                result_dict[bc][current_abc][read.sequence] += 1
 
         logger.info("Finished reading file\t" + str(current_abc))
 
     # Barcode-globbing umi/read counter for all ABC:s
-    abc_counter_umi = dict()
-    abc_counter_read = dict()
-    for abc in abc_list:
-        abc_counter_umi[abc] = [0]
-        abc_counter_read[abc] = [0]
+    abc_counter_umi = {abc: [0] for abc in args.umi_abc}
+    abc_counter_read = copy.deepcopy(abc_counter_umi)
 
     # Output file writing and
-    with open(args.output, 'w') as openout:
-        for bc in result_dict.keys():
-            out_string = str()
-            for abc in abc_list:
-                # Prepping outstring: umi_count(abc1) + \t + umi_count(abc2) + \t + umi_count(abc3) \n
-                out_string += str(len(result_dict[bc][abc])) + '\t'
-                # Add number of UMI:s
-                if sum(result_dict[bc][abc].values()) >= args.filter:
-                    abc_counter_umi[abc].append(len(result_dict[bc][abc].keys()))
-                    # Add number of reads
-                    abc_counter_read[abc].append(sum(result_dict[bc][abc].values()))
-                    # If not enough reads, remove entry
-                #else:
-                #    del result_dict[bc][abc]
+    output_list = list()
+    for bc in iter(result_dict):
+        output_line = {'BC': bc}
 
-            openout.write(out_string + '\n')
+        for abc in args.umi_abc:
+            output_line[abc] = len(result_dict[bc][abc])
+
+            # Add statistics if passing filter.
+            if sum(result_dict[bc][abc].values()) >= args.filter:
+                # Add number of UMI:s
+                abc_counter_umi[abc].append(len(result_dict[bc][abc]))
+                # Add number of reads
+                abc_counter_read[abc].append(sum(result_dict[bc][abc].values()))
+
+        output_list.append(output_line)
+
+    df_out = pd.DataFrame(output_list)
+    df_out.to_csv(args.output, sep="\t")
+
+    logger.info(f"Tot DBS count: {len(result_dict)}")
 
     # Reporting stats to terminal
-    print()
-    logger.info("Tot DBS count:\t" + str(len(result_dict.keys())))
-    for abc in abc_list:
-        print()
-        logger.info("\t" + abc + " tot umi count:\t" + "{:,}".format(sum(abc_counter_umi[abc])))
-        logger.info("\t" + abc + " N50 umi per dbs:\t" + "{:,}".format(n50_counter(abc_counter_umi[abc])))
-        logger.info("\t" + abc + " tot read count:\t" + "{:,}".format(sum(abc_counter_read[abc])))
-        logger.info("\t" + abc + " N50 read per dbs:\t" + "{:,}".format(n50_counter(abc_counter_read[abc])))
+    data_to_print = list()
+    for abc in args.umi_abc:
+        data_to_print.append({
+            "ABC": abc,
+            "Total # UMI": sum(abc_counter_umi[abc]),
+            "N50(UMI/DBS)": n50_counter(abc_counter_umi[abc]),
+            "Total # Reads": sum(abc_counter_read[abc]),
+            "N50(Reads/DBS)": n50_counter(abc_counter_read[abc])
+        })
+    print("\nRESULTS")
+    df_data = pd.DataFrame(data_to_print).set_index("ABC", drop=True)
+    print(df_data)
     print()
 
     # Plotting
     logger.info("Prepping data for plot")
     read_dict_for_plotting, umi_dict_for_plotting = format_data_for_plotting(result_dict)
-    plot_density_correlation_matrix(args.read_plot,read_dict_for_plotting, abc_list)
-    plot_density_correlation_matrix(args.umi_plot,umi_dict_for_plotting, abc_list)
+    plot_density_correlation_matrix(args.read_plot, read_dict_for_plotting, args.umi_abc)
+    plot_density_correlation_matrix(args.umi_plot, umi_dict_for_plotting, args.umi_abc)
     logger.info("Finished")
 
-def dict_clearer(dictionary):
-    """
-    Takes a dictionary and removed any keys which does not have any values
-    :param dictionary:
-    :return:
-    """
-
-    for key, val in dictionary.copy().items():
-        if len(val) == 0:
-            del dictionary[key]
-
-    return dictionary
 
 def n50_counter(input_list):
     """
     Calculates N50 for a given list
-    :param list: list with numbers (list)
+    :param input_list: list with numbers (list)
     :return: N50 (same type as elements of list)
     """
     input_list.sort()
@@ -128,6 +115,7 @@ def n50_counter(input_list):
         current_count += num
         if current_count >= half_tot:
             return num
+
 
 def format_data_for_plotting(result_dict):
     """
@@ -147,6 +135,7 @@ def format_data_for_plotting(result_dict):
 
     return read_dict_for_plotting, umi_dict_for_plotting
 
+
 def plot_density_correlation_matrix(name, result_dict, abc_names):
     """
 
@@ -155,7 +144,6 @@ def plot_density_correlation_matrix(name, result_dict, abc_names):
     :param z:
     :return:
     """
-
 
     df_list = list()
     for dbs_dict in result_dict.values():
@@ -171,6 +159,7 @@ def plot_density_correlation_matrix(name, result_dict, abc_names):
 
     my_path = os.path.abspath(__file__)
     plt.savefig(name)
+
 
 def add_arguments(parser):
 
