@@ -58,7 +58,6 @@ def main(args):
                                   f"{args.construct}, seuqence: {args.sequence})")
         else:
             with open(infile, 'w') as openout:
-                openout.write("Antibody-target\tBarcode-sequence\n")
                 for key, value in outdict.items():
                     openout.write(f"{key}\t{value}\n")
 
