@@ -15,6 +15,7 @@ def main(args):
     logger.info(f"Processing file: {args.err_corr}")
 
     err_corr = dict()
+    clusters = set()
     with open(args.err_corr, "r") as file:
         for line in tqdm(file):
             try:
@@ -22,10 +23,12 @@ def main(args):
             except ValueError:
                 logging.warning(f"Non-default starcode output line: {line}")
                 continue
-
+            clusters.add(cluster_seq)
             for raw_seq in raw_seqs_list.split(","):
                 if raw_seq not in err_corr:
                     err_corr[raw_seq] = cluster_seq
+
+    logger.info(f"Clusters: {len(clusters)}")
 
     logger.info(f"Error corrected sequenced parsed.")
 
@@ -39,6 +42,11 @@ def main(args):
             counter['tot_reads'] += 1
             if read.sequence in err_corr:
                 read.sequence = err_corr[read.sequence]
+
+                # FIX: Possibly the sequence of the error corrected read is different from the original
+                if len(read.qualities) != len(read.sequence):
+                    read.qualities = "G"*len(read.sequence)
+
                 openout.write(read)
                 counter['corr_seqs'] += 1
             else:
