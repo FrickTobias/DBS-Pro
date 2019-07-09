@@ -10,16 +10,24 @@ import dnaio
 import copy
 from collections import defaultdict
 from tqdm import tqdm
+import os
 
 logger = logging.getLogger(__name__)
-
-# TODO Fix so that ABC are labeled with name from config file instead of file name.
 
 
 def main(args):
     # Barcode processing
     logger.info(f"Starting analysis")
     logger.info(f"Saving DBS information to RAM")
+
+    # Set names for ABCs. Creates dict with file names as keys and selected names as values.
+    default_tsv = os.path.join(os.path.dirname(__file__), "../../../construct-info/ABC-sequences.tsv")
+    if args.names == "Use file name":
+        abc_names = {file_name: file_name for file_name in args.umi_abc}
+    elif args.names:
+        abc_names = get_names(args.names, args.umi_abc)
+    else:
+        abc_names = get_names(default_tsv, args.umi_abc)
 
     bc_dict = dict()
     with dnaio.open(args.dbs, mode="r", fileformat="fastq") as reader:
@@ -47,14 +55,14 @@ def main(args):
 
                 # If not dbs in result dict, add it and give it a dictionary for every abc
                 if bc not in result_dict:
-                    result_dict[bc] = {abc: defaultdict(int) for abc in args.umi_abc}
+                    result_dict[bc] = {abc_names[abc]: defaultdict(int) for abc in args.umi_abc}
 
-                result_dict[bc][current_abc][read.sequence] += 1
+                result_dict[bc][abc_names[current_abc]][read.sequence] += 1
 
-        logger.info("Finished reading file\t" + str(current_abc))
+        logger.info(f"Finished reading file: {current_abc}")
 
     # Barcode-globbing umi/read counter for all ABC:s
-    abc_counter_umi = {abc: [0] for abc in args.umi_abc}
+    abc_counter_umi = {abc_names[abc]: [0] for abc in args.umi_abc}
     abc_counter_read = copy.deepcopy(abc_counter_umi)
 
     # Output file writing and
@@ -62,7 +70,7 @@ def main(args):
     for bc in iter(result_dict):
         output_line = {'BC': bc}
 
-        for abc in args.umi_abc:
+        for abc in abc_names.values():
             output_line[abc] = len(result_dict[bc][abc])
 
             # Add statistics if passing filter.
@@ -74,14 +82,16 @@ def main(args):
 
         output_list.append(output_line)
 
-    df_out = pd.DataFrame(output_list, columns=["BC"] + sorted(args.umi_abc)).set_index("BC", drop=True)
+    # Create dataframe with barcode as index and columns with ABC data. Export to tsv.
+    df_out = pd.DataFrame(output_list, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
     df_out.to_csv(args.output, sep="\t")
 
-    logger.info(f"Tot DBS count: {len(result_dict)}")
+    logger.info(f"Total DBS count: {len(result_dict):9,}")
+    logger.info(f"UMIs without BC: {umi_without_proper_bc:9,}")
 
     # Reporting stats to terminal
     data_to_print = list()
-    for abc in args.umi_abc:
+    for abc in abc_names.values():
         data_to_print.append({
             "ABC": abc[-25:],
             "Total # UMI": sum(abc_counter_umi[abc]),
@@ -96,14 +106,33 @@ def main(args):
     print()
 
     # Plotting
-    logger.info("Prepping data for plot")
+    logger.info(f"Prepping data for plot")
 
     read_dict_for_plotting, umi_dict_for_plotting = format_data_for_plotting(result_dict)
 
-    plot_density_correlation_matrix(args.read_plot, read_dict_for_plotting, args.umi_abc)
-    plot_density_correlation_matrix(args.umi_plot, umi_dict_for_plotting, args.umi_abc)
+    plot_density_correlation_matrix(args.read_plot, read_dict_for_plotting, abc_names.values())
+    plot_density_correlation_matrix(args.umi_plot, umi_dict_for_plotting, abc_names.values())
 
-    logger.info("Finished")
+    logger.info(f"Finished")
+
+
+def get_names(tsv_file, file_names):
+    """
+    Takes a file tsv_file with columns 'Antibody-target' and 'Barocode-sequence' and list file_names and
+    combines them into dict with file_name keys and ABC names as values.
+    :param tsv_file: Input .tsv. Must contain columns 'Antibody-target' (with names) and 'Barocode-sequence'
+    (with sequences)
+    :param file_names: list. File names in list. Names must contain barcodes sequence.
+    :return: dict
+    """
+    df = pd.read_csv(tsv_file, sep="\t")
+    df_dict = df.to_dict('records')
+    results_dict = dict()
+    for record in df_dict:
+        # Matches tsv file ABC name with file name by filtering file names for the barcode sequence
+        file_name = list(filter(lambda abc: record['Barcode-sequence'] in abc, file_names))[0]
+        results_dict[file_name] = record['Antibody-target']
+    return results_dict
 
 
 def n50_counter(input_list):
@@ -176,3 +205,7 @@ def add_arguments(parser):
     # Options
     parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
                                                                     "to be included in output. DEFAULT: 0")
+    parser.add_argument("-n", "--names", default="Use file name", nargs="?", metavar="<NAMES>",
+                        help="Include tsv file with ABC names and barcodes to use for naming output. If no file is "
+                             "given the default file from construct-info/ABC-sequences.tsv is used. If omitted the "
+                             "file names are used instead")
