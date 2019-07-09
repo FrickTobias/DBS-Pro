@@ -23,7 +23,7 @@ def main(args):
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
     default_tsv = os.path.join(os.path.dirname(__file__), "../../../construct-info/ABC-sequences.tsv")
     if args.names == "Use file name":
-        abc_names = {file_name: file_name for file_name in args.umi_abc}
+        abc_names = {file_name: file_name.split('/')[-1] for file_name in args.umi_abc}
     elif args.names:
         abc_names = get_names(args.names, args.umi_abc)
     else:
@@ -84,6 +84,7 @@ def main(args):
 
     # Create dataframe with barcode as index and columns with ABC data. Export to tsv.
     df_out = pd.DataFrame(output_list, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
+    logging.info(f"Writing output file to: {args.output}")
     df_out.to_csv(args.output, sep="\t")
 
     logger.info(f"Total DBS count: {len(result_dict):9,}")
