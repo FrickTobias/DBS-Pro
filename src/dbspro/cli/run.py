@@ -66,7 +66,7 @@ def add_arguments(parser):
     parser.add_argument('targets', nargs='*', metavar='<TARGETS>',
                         default=['umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'],
                         help='File(s) to create excluding paths). If omitted, the full pipeline is run.')
-    parser.add_argument('-d', '--directory', default=os.getcwd(), type=Path, metavar='<DIRECTORY>',
+    parser.add_argument('-d', '--directory', default=os.getcwd(), type=str, metavar='<DIRECTORY>',
                         help='Path to directory in which to run pipeline and store output. Should contain input '
                              'fastq file (or symbolic link to file) unless given as argument. Default: CWD')
     parser.add_argument('-f', '--fastq', default=None, type=str, metavar='<FASTQ>',
