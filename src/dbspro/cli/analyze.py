@@ -62,28 +62,8 @@ def main(args):
         logger.info(f"Finished reading file: {current_abc}")
 
     # Barcode-globbing umi/read counter for all ABC:s
-    abc_counter_umi = {abc_names[abc]: [0] for abc in args.umi_abc}
-    abc_counter_read = copy.deepcopy(abc_counter_umi)
+    df_out, abc_counter = make_df_from_dict(result_dict, abc_names, sum_filter=args.filter)
 
-    # Output file writing and
-    output_list = list()
-    for bc in iter(result_dict):
-        output_line = {'BC': bc}
-
-        for abc in abc_names.values():
-            output_line[abc] = len(result_dict[bc][abc])
-
-            # Add statistics if passing filter.
-            if sum(result_dict[bc][abc].values()) >= args.filter:
-                # Add number of UMI:s
-                abc_counter_umi[abc].append(len(result_dict[bc][abc]))
-                # Add number of reads
-                abc_counter_read[abc].append(sum(result_dict[bc][abc].values()))
-
-        output_list.append(output_line)
-
-    # Create dataframe with barcode as index and columns with ABC data. Export to tsv.
-    df_out = pd.DataFrame(output_list, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
     logging.info(f"Writing output file to: {args.output}")
     df_out.to_csv(args.output, sep="\t")
 
@@ -95,10 +75,10 @@ def main(args):
     for abc in abc_names.values():
         data_to_print.append({
             "ABC": abc[-25:],
-            "Total # UMI": sum(abc_counter_umi[abc]),
-            "N50(UMI/DBS)": n50_counter(abc_counter_umi[abc]),
-            "Total # Reads": sum(abc_counter_read[abc]),
-            "N50(Reads/DBS)": n50_counter(abc_counter_read[abc])
+            "Total # UMI": sum(abc_counter[abc]['umis']),
+            "N50(UMI/DBS)": n50_counter(abc_counter[abc]['umis']),
+            "Total # Reads": sum(abc_counter[abc]['reads']),
+            "N50(Reads/DBS)": n50_counter(abc_counter[abc]['reads'])
         })
 
     print("\nRESULTS")
@@ -115,6 +95,31 @@ def main(args):
     plot_density_correlation_matrix(args.umi_plot, umi_dict_for_plotting, abc_names.values())
 
     logger.info(f"Finished")
+
+
+def make_df_from_dict(result_dict, abc_names, sum_filter=0):
+    abc_counter = {abc: {"umis": list(), "reads": list()} for abc in abc_names.values()}
+
+    # Output file writing and
+    output_list = list()
+    for bc in iter(result_dict):
+        output_line = {'BC': bc}
+
+        for abc in abc_names.values():
+            output_line[abc] = len(result_dict[bc][abc])
+
+            # Add statistics if passing filter.
+            if sum(result_dict[bc][abc].values()) >= sum_filter:
+                # Add number of UMI:s
+                abc_counter[abc]['umis'].append(len(result_dict[bc][abc]))
+                # Add number of reads
+                abc_counter[abc]['reads'].append(sum(result_dict[bc][abc].values()))
+
+        output_list.append(output_line)
+
+    # Create dataframe with barcode as index and columns with ABC data. Export to tsv.
+    df = pd.DataFrame(output_list, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
+    return df, abc_counter
 
 
 def get_names(tsv_file, file_names):
