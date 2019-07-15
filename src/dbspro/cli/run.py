@@ -50,6 +50,8 @@ def main(args):
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
                         dryrun=args.dryrun,
+                        printdag=args.dag,
+                        quiet=False if not args.dag else True,
                         cores=args.cores,
                         printshellcmds=True,
                         targets=targets_with_path)
@@ -59,10 +61,13 @@ def main(args):
 
 def add_arguments(parser):
     parser.add_argument("-n", "--dryrun", default=False, action='store_true',
-                        help="Perform dry run of pipeline.")
+                        help="Perform dry run of pipeline. Default: False.")
+    parser.add_argument("--dag", default=False, action='store_true',
+                        help="Print the dag in the graphviz dot language. Default: False. To det output to pdf file, "
+                             "pipe output into dot as follows: '$ dbspro run --dag | dot -Tpdf > dag.pdf'")
     parser.add_argument("-j", "--cores", "--jobs", metavar="<N>", type=int,
                         default=available_cpu_count(),
-                        help="Maximum number of cores to run in parallel. Default: Use as manny as available.")
+                        help="Maximum number of cores to run in parallel. Default: Use as many as available.")
     parser.add_argument('targets', nargs='*', metavar='<TARGETS>',
                         default=['umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'],
                         help='File(s) to create excluding paths). If omitted, the full pipeline is run.')
