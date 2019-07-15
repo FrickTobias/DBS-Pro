@@ -36,16 +36,12 @@ def main(args):
 
     counter = Counter()
     with dnaio.open(args.raw_fastq, mode="r", fileformat="fastq") as reader, \
-         dnaio.open(args.corr_fastq, mode="w", fileformat="fastq") as openout:
+         dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as openout:
         for read in tqdm(reader):
 
             counter['tot_reads'] += 1
             if read.sequence in err_corr:
                 read.sequence = err_corr[read.sequence]
-
-                # FIX: Possibly the sequence of the error corrected read is different from the original
-                if len(read.qualities) != len(read.sequence):
-                    read.qualities = "G"*len(read.sequence)
 
                 openout.write(read)
                 counter['corr_seqs'] += 1
@@ -61,4 +57,4 @@ def main(args):
 def add_arguments(parser):
     parser.add_argument("raw_fastq", help="Fastq file with raw sequences.")
     parser.add_argument("err_corr", help="Starcode default output with error corrected sequences.")
-    parser.add_argument("corr_fastq", help="Output file in fastq with error corrected sequences.")
+    parser.add_argument("corr_fasta", help="Output file in fasta with error corrected sequences.")
