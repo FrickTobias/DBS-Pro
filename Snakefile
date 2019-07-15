@@ -123,7 +123,7 @@ rule abc_cluster:
 rule error_correct:
     "Combine cluster results with original files to error correct them."
     output:
-        reads="{dir}/{corr_file}-corrected.fastq"
+        reads="{dir}/{corr_file}-corrected.fasta"
     input:
         reads="{dir}/{corr_file}-raw.fastq.gz",
         clusters="{dir}/{corr_file}-clusters.txt"
@@ -142,15 +142,15 @@ rule analyze:
         umi_plot="{dir}/umi-density-plot.png",
         reads_plot="{dir}/read-density-plot.png"
     input:
-        dbs_fastq="{dir}/dbs-corrected.fastq",
-        abc_fastqs=expand("{{dir}}/{abc}-UMI-corrected.fastq", abc=abc["Barcode-sequence"])
+        dbs_fasta="{dir}/dbs-corrected.fasta",
+        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc["Barcode-sequence"])
     log: "{dir}/analyze.log"
     threads: 20
     shell:
         "dbspro analyze"
         " -f 4"
-        " {input.dbs_fastq}"
+        " {input.dbs_fasta}"
         " {output.counts}"
         " {output.umi_plot}"
         " {output.reads_plot}"
-        " {input.abc_fastqs}"
+        " {input.abc_fastas}"

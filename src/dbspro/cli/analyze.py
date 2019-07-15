@@ -30,7 +30,7 @@ def main(args):
         abc_names = get_names(default_tsv, args.umi_abc)
 
     bc_dict = dict()
-    with dnaio.open(args.dbs, mode="r", fileformat="fastq") as reader:
+    with dnaio.open(args.dbs, mode="r", fileformat="fasta") as reader:
         for read in tqdm(reader):
             bc_dict[read.name] = read.sequence
     logger.info(f"Finished processing DBS sequences")
@@ -42,7 +42,7 @@ def main(args):
     for current_abc in args.umi_abc:
         logger.info(f"Reading file: {current_abc}")
 
-        with dnaio.open(current_abc, mode="r", fileformat="fastq") as reader:
+        with dnaio.open(current_abc, mode="r", fileformat="fasta") as reader:
             # Loop over reads in file, where read.seq = umi
             for read in tqdm(reader):
 
