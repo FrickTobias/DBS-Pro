@@ -100,7 +100,7 @@ rule dbs_cluster:
         "pigz -cd {input.reads} | starcode"
         " --print-clusters"
         " -t {threads}"
-        " -d 2"
+        " -d {config[dbs_cluster_dist]}"
         " -o {output.clusters}"
 
 rule abc_cluster:
@@ -115,7 +115,7 @@ rule abc_cluster:
         "pigz -cd {input} | starcode"
         " --print-clusters"
         " -t {threads}"
-        " -d 1"
+        " -d {config[abc_cluster_dist]}"
         " -o {output}"
 
 # DBS-Pro
@@ -148,7 +148,7 @@ rule analyze:
     threads: 20
     shell:
         "dbspro analyze"
-        " -f 4"
+        " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
         " {output.counts}"
         " {output.umi_plot}"
