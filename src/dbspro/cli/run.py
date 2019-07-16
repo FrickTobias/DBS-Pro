@@ -44,6 +44,13 @@ def main(args):
         os.symlink(args.fastq, f"{args.directory}/{accepted_file}")
         logging.info('Creating symbolic link for input file in output directory.')
 
+    # Create dict containing the paramaters to be passed to the snakefile.
+    configs_dict = {
+        'dbs_cluster_dist': args.dbs_cluster_dist,
+        'abc_cluster_dist': args.abc_cluster_dist,
+        'filter_reads': args.filter_reads
+    }
+
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
     snakefile_path = pkg_resources.resource_filename('dbspro', 'Snakefile')
     logger.root.handlers = []
@@ -52,6 +59,7 @@ def main(args):
                         dryrun=args.dryrun,
                         printdag=args.dag,
                         quiet=False if not args.dag else True,
+                        config=configs_dict,
                         cores=args.cores,
                         printshellcmds=True,
                         targets=targets_with_path)
@@ -61,18 +69,27 @@ def main(args):
 
 def add_arguments(parser):
     parser.add_argument("-n", "--dryrun", default=False, action='store_true',
-                        help="Perform dry run of pipeline. Default: False.")
+                        help="Perform dry run of pipeline. DEFAULT: False.")
     parser.add_argument("--dag", default=False, action='store_true',
-                        help="Print the dag in the graphviz dot language. Default: False. To det output to pdf file, "
+                        help="Print the dag in the graphviz dot language. DEFAULT: False. To det output to pdf file, "
                              "pipe output into dot as follows: '$ dbspro run --dag | dot -Tpdf > dag.pdf'")
-    parser.add_argument("-j", "--cores", "--jobs", metavar="<N>", type=int,
-                        default=available_cpu_count(),
-                        help="Maximum number of cores to run in parallel. Default: Use as many as available.")
+    parser.add_argument("-j", "--cores", "--jobs", metavar="<JOBS>", type=int, default=available_cpu_count(),
+                        help="Maximum number of cores to run in parallel. DEFAULT: Use as many as available.")
     parser.add_argument('targets', nargs='*', metavar='<TARGETS>',
                         default=['umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'],
                         help='File(s) to create excluding paths). If omitted, the full pipeline is run.')
     parser.add_argument('-d', '--directory', default=os.getcwd(), type=str, metavar='<DIRECTORY>',
                         help='Path to directory in which to run pipeline and store output. Should contain input '
-                             'fastq file (or symbolic link to file) unless given as argument. Default: CWD')
+                             'fastq file (or symbolic link to file) unless given as argument. DEFAULT: CWD')
     parser.add_argument('-f', '--fastq', default=None, type=str, metavar='<FASTQ>',
-                        help="Input fastq file. Should have extension '.fastq.gz'. Default: None")
+                        help="Input fastq file. Should have extension '.fastq.gz'. DEFAULT: None")
+
+    configs = parser.add_argument_group('Pipeline configs')
+
+    configs.add_argument('--dbs-cluster-dist', default=2, type=int, metavar="<DISTANCE>",
+                         help="Maximum edit distance to cluster DBS sequences in Starcode. DEFAULT: 2")
+    configs.add_argument('--abc-cluster-dist', default=1, type=int, metavar="<DISTANCE>",
+                         help="Maximum edit distance to cluster ABC sequences in Starcode. DEFAULT: 1")
+
+    configs.add_argument("--filter-reads", type=int, default=4, metavar="<READS>",
+                         help="Minimum reads required for an ABC to be included in analysis output. DEFAULT: 4")
