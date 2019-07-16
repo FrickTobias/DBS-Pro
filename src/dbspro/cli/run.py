@@ -15,10 +15,6 @@ logger = logging.getLogger(__name__)
 accepted_file = 'reads.fastq.gz'
 accepted_file_ext = '.fastq.gz'
 
-default_handle_file = "construct-info/handles.tsv"
-default_abc_file = "construct-info/ABC-sequences.tsv"
-
-
 def main(args):
     # Check if path to output directory is absolute or make it so.
     if not os.path.isabs(args.directory):
@@ -49,12 +45,10 @@ def main(args):
 
     # Check if tsv files with handle and ABC seqeunces submitted or use default.
     if not args.handles_file:
-        dbs_pro_folder = os.path.realpath(__file__).rsplit("/", 4)[0]
-        args.handles_file = os.path.join(dbs_pro_folder, default_handle_file)
+        args.handles_file = pkg_resources.resource_filename("dbspro", "construct-info/handles.tsv")
 
     if not args.abc_file:
-        dbs_pro_folder = os.path.realpath(__file__).rsplit("/", 4)[0]
-        args.abc_file = os.path.join(dbs_pro_folder, default_abc_file)
+        args.abc_file = pkg_resources.resource_filename("dbspro", "construct-info/ABC-sequences.tsv")
 
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {

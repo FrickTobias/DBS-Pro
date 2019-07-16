@@ -13,7 +13,9 @@ setup(
     license="MIT",
     python_requires=">=3.6",
     package_dir={"": "src"},
-    package_data={"dbspro": ["Snakefile"]},
+    package_data={"dbspro": ["Snakefile",
+                             'construct-info/ABC-sequences.tsv',
+                             'construct-info/handles.tsv']},
     packages=find_namespace_packages("src"),
     entry_points={"console_scripts": ["dbspro = dbspro.__main__:main"]},
     classifiers=[
