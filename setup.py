@@ -4,7 +4,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 setup(
-    name="DBS-Pro",
+    name="dbspro",
     author="Tobias Frick",
     url="https://github.com/TobiasFrick/DBS-Pro/",
     description="DBS-Pro pipeline",
@@ -13,6 +13,7 @@ setup(
     license="MIT",
     python_requires=">=3.6",
     package_dir={"": "src"},
+    package_data={"dbspro": ["Snakefile", "config.yaml"]},
     packages=find_namespace_packages("src"),
     entry_points={"console_scripts": ["dbspro = dbspro.__main__:main"]},
     classifiers=[
