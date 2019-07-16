@@ -1,11 +1,9 @@
 import pandas as pd
 from snakemake.utils import validate
 
+abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
 
-abc = pd.read_csv(config["ABC-sequences"], sep='\t').set_index("Antibody-target", drop=False)
 handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
-#validate(samples, "samples.schema.yaml")
-
 
 # Cutadapt trimming
 

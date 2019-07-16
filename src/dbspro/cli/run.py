@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 accepted_file = 'reads.fastq.gz'
 accepted_file_ext = '.fastq.gz'
 
+default_handle_file = "construct-info/handles.tsv"
+default_abc_file = "construct-info/ABC-sequences.tsv"
+
 
 def main(args):
     # Check if path to output directory is absolute or make it so.
@@ -44,17 +47,26 @@ def main(args):
         os.symlink(args.fastq, f"{args.directory}/{accepted_file}")
         logging.info('Creating symbolic link for input file in output directory.')
 
+    # Check if tsv files with handle and ABC seqeunces submitted or use default.
+    if not args.handles_file:
+        dbs_pro_folder = os.path.realpath(__file__).rsplit("/", 4)[0]
+        args.handles_file = os.path.join(dbs_pro_folder, default_handle_file)
+
+    if not args.abc_file:
+        dbs_pro_folder = os.path.realpath(__file__).rsplit("/", 4)[0]
+        args.abc_file = os.path.join(dbs_pro_folder, default_abc_file)
+
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {
         'dbs_cluster_dist': args.dbs_cluster_dist,
         'abc_cluster_dist': args.abc_cluster_dist,
-        'filter_reads': args.filter_reads
+        'filter_reads': args.filter_reads,
+        'abc_sequences': args.abc_file,
+        'handles': args.handles_file
     }
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
     snakefile_path = pkg_resources.resource_filename("dbspro", 'Snakefile')
-    configfile_path = pkg_resources.resource_filename("dbspro", 'config.yaml')
-    print(configfile_path)
     logger.root.handlers = []
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
@@ -62,7 +74,6 @@ def main(args):
                         printdag=args.dag,
                         quiet=False if not args.dag else True,
                         config=configs_dict,
-                        configfile=configfile_path,
                         cores=args.cores,
                         printshellcmds=True,
                         targets=targets_with_path)
@@ -88,7 +99,12 @@ def add_arguments(parser):
                         help="Input fastq file. Should have extension '.fastq.gz'. DEFAULT: None")
 
     configs = parser.add_argument_group('Pipeline configs')
-
+    configs.add_argument('--handles-file', default=None, type=str, metavar='<TSV>',
+                         help="Path to tsv file containing the name and sequence of handles h1, h2 and h3 in the "
+                              "construct structure. DEFAULT: Use file handles.tsv in construct-info.")
+    configs.add_argument('--abc-file', default=None, type=str, metavar='<TSV>',
+                         help="Path to tsv file containing the name and sequence of ABCs. "
+                              "DEFAULT: Use file ABC-sequences.tsv in construct-info.")
     configs.add_argument('--dbs-cluster-dist', default=2, type=int, metavar="<DISTANCE>",
                          help="Maximum edit distance to cluster DBS sequences in Starcode. DEFAULT: 2")
     configs.add_argument('--abc-cluster-dist', default=1, type=int, metavar="<DISTANCE>",
