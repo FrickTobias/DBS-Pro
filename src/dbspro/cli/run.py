@@ -46,9 +46,10 @@ def main(args):
     # Check if tsv files with handle and ABC seqeunces submitted or use default.
     if not args.handles_file:
         args.handles_file = pkg_resources.resource_filename("dbspro", "construct-info/handles.tsv")
-
+        logger.info(f"Using deafult handles file: {args.handles_file}")
     if not args.abc_file:
         args.abc_file = pkg_resources.resource_filename("dbspro", "construct-info/ABC-sequences.tsv")
+        logger.info(f"Using deafult abc file: {args.abc_file}")
 
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {
@@ -61,6 +62,7 @@ def main(args):
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
     snakefile_path = pkg_resources.resource_filename("dbspro", 'Snakefile')
+    logger.info(f"Snakefile: {snakefile_path}")
     logger.root.handlers = []
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
