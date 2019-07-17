@@ -44,15 +44,23 @@ def main(args):
         os.symlink(args.fastq, f"{args.directory}/{accepted_file}")
         logging.info('Creating symbolic link for input file in output directory.')
 
+    if not args.abc_file:
+        raise FileNotFoundError('Missing file abc_file containing ABC information .')
+
+    if not args.handles_file:
+        raise FileNotFoundError('Missing file handles_file containing handle information.')
+
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {
         'dbs_cluster_dist': args.dbs_cluster_dist,
         'abc_cluster_dist': args.abc_cluster_dist,
-        'filter_reads': args.filter_reads
+        'filter_reads': args.filter_reads,
+        'abc_sequences': args.abc_file,
+        'handles': args.handles_file
     }
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
-    snakefile_path = pkg_resources.resource_filename('dbspro', 'Snakefile')
+    snakefile_path = pkg_resources.resource_filename("dbspro", 'Snakefile')
     logger.root.handlers = []
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
@@ -85,7 +93,12 @@ def add_arguments(parser):
                         help="Input fastq file. Should have extension '.fastq.gz'. DEFAULT: None")
 
     configs = parser.add_argument_group('Pipeline configs')
-
+    configs.add_argument('-hf', '--handles-file', default=None, type=str, metavar='<TSV>',
+                         help="Path to tsv file containing the name and sequence of handles h1, h2 and h3 in the "
+                              "construct structure. DEFAULT: Use file handles.tsv in construct-info.")
+    configs.add_argument('-af', '--abc-file', default=None, type=str, metavar='<TSV>',
+                         help="Path to tsv file containing the name and sequence of ABCs. "
+                              "DEFAULT: Use file ABC-sequences.tsv in construct-info.")
     configs.add_argument('--dbs-cluster-dist', default=2, type=int, metavar="<DISTANCE>",
                          help="Maximum edit distance to cluster DBS sequences in Starcode. DEFAULT: 2")
     configs.add_argument('--abc-cluster-dist', default=1, type=int, metavar="<DISTANCE>",
