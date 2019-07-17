@@ -72,18 +72,18 @@ def get_abc_sequnce(wildcards):
 rule identify_abc:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/{abc['Antibody-target']}-UMI-raw.fastq.gz"
+        reads="{dir}/{sample}-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/id-{abc}.log"
-    params:
-        sequence = get_abc_sequence
+    log: "{dir}/id-{sample}.log"
     threads: 20
+    params:
+        seq = lambda wildcards: abc['Barcode-sequence'][wildcards.sample]
     shell:
         "cutadapt"
-        " -g ^{params.sequence}"
-        " -m config[umi_len]"
-        " -M config[umi_len]"
+        " -g ^{params.seq}"
+        " -m {config[umi_len]}"
+        " -M {config[umi_len]}"
         " -e 0.2"
         " -j {threads}"
         " -o {output.reads}"
@@ -147,7 +147,7 @@ rule analyze:
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fasta="{dir}/dbs-corrected.fasta",
-        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc["Barcode-sequence"])
+        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc['Antibody-target'])
     log: "{dir}/analyze.log"
     threads: 20
     shell:
