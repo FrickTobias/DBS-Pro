@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 accepted_file = 'reads.fastq.gz'
 accepted_file_ext = '.fastq.gz'
 
+default_handles_file = "construct-info/handles.tsv"
+default_abc_file = "construct-info/ABC-sequences.tsv"
+
+
 def main(args):
     # Check if path to output directory is absolute or make it so.
     if not os.path.isabs(args.directory):
@@ -43,13 +47,16 @@ def main(args):
         os.symlink(args.fastq, f"{args.directory}/{accepted_file}")
         logging.info('Creating symbolic link for input file in output directory.')
 
-    # Check if tsv files with handle and ABC seqeunces submitted or use default.
-    if not args.handles_file:
-        args.handles_file = pkg_resources.resource_filename("dbspro", "construct-info/handles.tsv")
-        logger.info(f"Using deafult handles file: {args.handles_file}")
+    # import pdb
+    # pdb.set_trace()
+
     if not args.abc_file:
-        args.abc_file = pkg_resources.resource_filename("dbspro", "construct-info/ABC-sequences.tsv")
-        logger.info(f"Using deafult abc file: {args.abc_file}")
+        args.abc_file = pkg_resources.resource_filename("dbspro", default_abc_file)
+        logger.info(f'ABC-file: {args.abc_file}')
+
+    if not args.handles_file:
+        args.handles_file = pkg_resources.resource_filename("dbspro", default_handles_file)
+        logger.info(f'Handle file: {args.handles_file}')
 
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {
