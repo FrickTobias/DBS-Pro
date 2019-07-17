@@ -5,6 +5,8 @@ abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target"
 
 handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
 
+dbs = "N"*config["dbs_len"]
+
 # Cutadapt trimming
 
 rule trim_3prime:
@@ -13,7 +15,7 @@ rule trim_3prime:
         reads="{dir}/trimmed-3prim.fastq.gz"
     input:
         reads="{dir}/reads.fastq.gz"
-    log: "{dir}/reads-3prim.log"
+    log: "{dir}/log_files/cutadapt-3prime-trim.log"
     threads: 20
     shell:
         "cutadapt"
@@ -30,8 +32,8 @@ rule extract_dbs:
     output:
         reads="{dir}/dbs-raw.fastq.gz"
     input:
-        reads="{dir}/trimmed-3prim.fastq.gz"
-    log: "{dir}/extract-dbs.log"
+        reads="{dir}/reads.fastq.gz"
+    log: "{dir}/log_files/cutadapt-extract-dbs.log"
     threads: 20
     shell:
         "cutadapt"
@@ -43,17 +45,17 @@ rule extract_dbs:
         " {input.reads}"
         " > {log}"
 
-rule trim_to_abc:
+rule extract_abc_umi:
     "Trim 3' end for coupling sequence between DBS and ABC."
     output:
         reads="{dir}/trimmed-abc.fastq.gz"
     input:
-        reads="{dir}/trimmed-3prim.fastq.gz"
-    log: "{dir}/reads-3prim.log"
+        reads="{dir}/reads.fastq.gz"
+    log: "{dir}/log_files/cutadapt-extract-abc-umi.log"
     threads: 20
     shell:
         "cutadapt"
-        " -g {handles[Sequence][h2]}"
+        " -g {handles[Sequence][h1]}{dbs}{handles[Sequence][h2]}...{handles[Sequence][h3]}"
         " --discard-untrimmed"
         " -e 0.2"
         " -j {threads}"
@@ -63,19 +65,25 @@ rule trim_to_abc:
 
 ## ABCs
 
+def get_abc_sequnce(wildcards):
+    return abc['Barcode-sequence'][wildcards.abc]
+
+# TODO Should take length from sequence.
 rule identify_abc:
     "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/{abc}-UMI-raw.fastq.gz"
+        reads="{dir}/{abc['Antibody-target']}-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
     log: "{dir}/id-{abc}.log"
+    params:
+        sequence = get_abc_sequence
     threads: 20
     shell:
         "cutadapt"
-        " -g ^{wildcards.abc}"
-        " -m 6"
-        " -M 6"
+        " -g ^{params.sequence}"
+        " -m config[umi_len]"
+        " -M config[umi_len]"
         " -e 0.2"
         " -j {threads}"
         " -o {output.reads}"

@@ -56,7 +56,9 @@ def main(args):
         'abc_cluster_dist': args.abc_cluster_dist,
         'filter_reads': args.filter_reads,
         'abc_sequences': args.abc_file,
-        'handles': args.handles_file
+        'handles': args.handles_file,
+        'dbs_len': args.dbs_len,
+        'umi_len': args.umi_len,
     }
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
@@ -106,3 +108,7 @@ def add_arguments(parser):
 
     configs.add_argument("--filter-reads", type=int, default=4, metavar="<READS>",
                          help="Minimum reads required for an ABC to be included in analysis output. DEFAULT: 4")
+    configs.add_argument("--dbs-len", type=int, default=20, metavar="<LENGTH>",
+                         help="Length of DBS barcode sequence in construct. DEFAULT: 20")
+    configs.add_argument("--umi-len", type=int, default=6, metavar="<LENGTH>",
+                         help="Length of UMI sequence in construct. DEFAULT: 6")
