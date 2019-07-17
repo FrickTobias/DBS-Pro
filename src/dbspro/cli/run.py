@@ -15,9 +15,6 @@ logger = logging.getLogger(__name__)
 accepted_file = 'reads.fastq.gz'
 accepted_file_ext = '.fastq.gz'
 
-default_handles_file = "construct-info/handles.tsv"
-default_abc_file = "construct-info/ABC-sequences.tsv"
-
 
 def main(args):
     # Check if path to output directory is absolute or make it so.
@@ -47,9 +44,6 @@ def main(args):
         os.symlink(args.fastq, f"{args.directory}/{accepted_file}")
         logging.info('Creating symbolic link for input file in output directory.')
 
-    # import pdb
-    # pdb.set_trace()
-
     if not args.abc_file:
         raise FileNotFoundError('Missing file abc_file containing ABC information .')
 
@@ -67,7 +61,6 @@ def main(args):
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
     snakefile_path = pkg_resources.resource_filename("dbspro", 'Snakefile')
-    logger.info(f"Snakefile: {snakefile_path}")
     logger.root.handlers = []
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
