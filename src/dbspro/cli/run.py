@@ -51,12 +51,10 @@ def main(args):
     # pdb.set_trace()
 
     if not args.abc_file:
-        args.abc_file = pkg_resources.resource_filename("dbspro", default_abc_file)
-        logger.info(f'ABC-file: {args.abc_file}')
+        raise FileNotFoundError('Missing file abc_file containing ABC information .')
 
     if not args.handles_file:
-        args.handles_file = pkg_resources.resource_filename("dbspro", default_handles_file)
-        logger.info(f'Handle file: {args.handles_file}')
+        raise FileNotFoundError('Missing file handles_file containing handle information.')
 
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {
@@ -102,10 +100,10 @@ def add_arguments(parser):
                         help="Input fastq file. Should have extension '.fastq.gz'. DEFAULT: None")
 
     configs = parser.add_argument_group('Pipeline configs')
-    configs.add_argument('--handles-file', default=None, type=str, metavar='<TSV>',
+    configs.add_argument('-hf', '--handles-file', default=None, type=str, metavar='<TSV>',
                          help="Path to tsv file containing the name and sequence of handles h1, h2 and h3 in the "
                               "construct structure. DEFAULT: Use file handles.tsv in construct-info.")
-    configs.add_argument('--abc-file', default=None, type=str, metavar='<TSV>',
+    configs.add_argument('-af', '--abc-file', default=None, type=str, metavar='<TSV>',
                          help="Path to tsv file containing the name and sequence of ABCs. "
                               "DEFAULT: Use file ABC-sequences.tsv in construct-info.")
     configs.add_argument('--dbs-cluster-dist', default=2, type=int, metavar="<DISTANCE>",
