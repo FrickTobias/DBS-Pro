@@ -21,13 +21,7 @@ def main(args):
     logger.info(f"Saving DBS information to RAM")
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    default_tsv = os.path.join(os.path.dirname(__file__), "../../../construct-info/ABC-sequences.tsv")
-    if args.names == "Use file name":
-        abc_names = {file_name: file_name.split('/')[-1] for file_name in args.umi_abc}
-    elif args.names:
-        abc_names = get_names(args.names, args.umi_abc)
-    else:
-        abc_names = get_names(default_tsv, args.umi_abc)
+    abc_names = {file_name: os.path.basename(file_name).split('-')[0] for file_name in args.umi_abc}
 
     bc_dict = dict()
     with dnaio.open(args.dbs, mode="r", fileformat="fasta") as reader:
@@ -74,7 +68,7 @@ def main(args):
     data_to_print = list()
     for abc in abc_names.values():
         data_to_print.append({
-            "ABC": abc[-25:],
+            "ABC": abc,
             "Total # UMI": sum(abc_counter[abc]['umis']),
             "N50(UMI/DBS)": n50_counter(abc_counter[abc]['umis']),
             "Total # Reads": sum(abc_counter[abc]['reads']),
@@ -120,25 +114,6 @@ def make_df_from_dict(result_dict, abc_names, sum_filter=0):
     # Create dataframe with barcode as index and columns with ABC data. Export to tsv.
     df = pd.DataFrame(output_list, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
     return df, abc_counter
-
-
-def get_names(tsv_file, file_names):
-    """
-    Takes a file tsv_file with columns 'Antibody-target' and 'Barocode-sequence' and list file_names and
-    combines them into dict with file_name keys and ABC names as values.
-    :param tsv_file: Input .tsv. Must contain columns 'Antibody-target' (with names) and 'Barocode-sequence'
-    (with sequences)
-    :param file_names: list. File names in list. Names must contain barcodes sequence.
-    :return: dict
-    """
-    df = pd.read_csv(tsv_file, sep="\t")
-    df_dict = df.to_dict('records')
-    results_dict = dict()
-    for record in df_dict:
-        # Matches tsv file ABC name with file name by filtering file names for the barcode sequence
-        file_name = list(filter(lambda abc: record['Barcode-sequence'] in abc, file_names))[0]
-        results_dict[file_name] = record['Antibody-target']
-    return results_dict
 
 
 def n50_counter(input_list):
@@ -211,7 +186,3 @@ def add_arguments(parser):
     # Options
     parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
                                                                     "to be included in output. DEFAULT: 0")
-    parser.add_argument("-n", "--names", default="Use file name", nargs="?", metavar="<NAMES>",
-                        help="Include tsv file with ABC names and barcodes to use for naming output. If no file is "
-                             "given the default file from construct-info/ABC-sequences.tsv is used. If omitted the "
-                             "file names are used instead")
