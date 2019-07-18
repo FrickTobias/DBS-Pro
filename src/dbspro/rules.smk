@@ -8,7 +8,6 @@ handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
 # Get required values
 abc_len = list(map(len, abc['Barcode-sequence']))[0]    # Assumes that all ABC are same length
 abc_umi_len = abc_len + config["umi_len"]
-
 dbs = "N"*config["dbs_len"]
 
 # Cutadapt trimming

@@ -62,7 +62,7 @@ def main(args):
     }
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
-    snakefile_path = pkg_resources.resource_filename("dbspro", 'Snakefile')
+    snakefile_path = pkg_resources.resource_filename("dbspro", 'rules.smk')
     logger.root.handlers = []
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
