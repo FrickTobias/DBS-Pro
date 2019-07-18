@@ -1,5 +1,4 @@
 import pandas as pd
-from snakemake.utils import validate
 
 # Read sample and handles files.
 abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
@@ -12,8 +11,8 @@ dbs = "N"*config["dbs_len"]
 
 # Cutadapt trimming
 
+"Extract DBS and trim handle between DBS and ABC."
 rule extract_dbs:
-    "Extract DBS and trim handle between DBS and ABC."
     output:
         reads="{dir}/dbs-raw.fastq.gz"
     input:
@@ -30,8 +29,9 @@ rule extract_dbs:
         " {input.reads}"
         " > {log}"
 
+
+"Extract ABC and UMI."
 rule extract_abc_umi:
-    "Trim 3' end for coupling sequence between DBS and ABC."
     output:
         reads="{dir}/trimmed-abc.fastq.gz"
     input:
@@ -52,8 +52,8 @@ rule extract_abc_umi:
 
 ## ABCs
 
+"Identifies ABC and trims it to give ABC-specific UMI fastq files."
 rule identify_abc:
-    "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
         reads="{dir}/{sample}-UMI-raw.fastq.gz"
     input:
@@ -73,10 +73,11 @@ rule identify_abc:
         " {input.reads}"
         " > {log}"
 
+
 # Starcode clustering
 
+"Cluster DBS sequence using starcode"
 rule dbs_cluster:
-    "Cluster DBS sequence using starcode"
     output:
         clusters="{dir}/dbs-clusters.txt"
     input:
@@ -90,25 +91,27 @@ rule dbs_cluster:
         " -d {config[dbs_cluster_dist]}"
         " -o {output.clusters}"
 
+
+"Cluster ABC sequence using starcode"
 rule abc_cluster:
-    "Cluster ABC sequence using starcode"
     output:
-        "{dir}/{sample}-UMI-clusters.txt"
+        clusters="{dir}/{sample}-UMI-clusters.txt"
     input:
-        "{dir}/{sample}-UMI-raw.fastq.gz"
+        reads="{dir}/{sample}-UMI-raw.fastq.gz"
     log: "{dir}/log_files/starcode-abc-cluster-{sample}.log"
     threads: 20
     shell:
-        "pigz -cd {input} | starcode"
+        "pigz -cd {input.reads} | starcode"
         " --print-clusters"
         " -t {threads}"
         " -d {config[abc_cluster_dist]}"
-        " -o {output}"
+        " -o {output.clusters}"
+
 
 # DBS-Pro
 
+"Combine cluster results with original files to error correct them."
 rule error_correct:
-    "Combine cluster results with original files to error correct them."
     output:
         reads="{dir}/{corr_file}-corrected.fasta"
     input:
@@ -122,8 +125,9 @@ rule error_correct:
         " {input.clusters}"
         " {output.reads}"
 
+
+"Analyzes all result files"
 rule analyze:
-    "Analyzes all result files"
     output:
         counts="{dir}/umi-counts.txt",
         umi_plot="{dir}/umi-density-plot.png",
