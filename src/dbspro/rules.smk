@@ -1,37 +1,23 @@
 import pandas as pd
-from snakemake.utils import validate
 
+# Read sample and handles files.
 abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
-
 handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
+
+# Get required values
+abc_len = list(map(len, abc['Barcode-sequence']))[0]    # Assumes that all ABC are same length
+abc_umi_len = abc_len + config["umi_len"]
+dbs = "N"*config["dbs_len"]
 
 # Cutadapt trimming
 
-rule trim_3prime:
-    "Trim 3' end up to UMI."
-    output:
-        reads="{dir}/trimmed-3prim.fastq.gz"
-    input:
-        reads="{dir}/reads.fastq.gz"
-    log: "{dir}/reads-3prim.log"
-    threads: 20
-    shell:
-        "cutadapt"
-        " -a {handles[Sequence][h3]}"
-        " --discard-untrimmed"
-        " -e 0.2"
-        " -j {threads}"
-        " -o {output.reads}"
-        " {input.reads}"
-        " > {log}"
-
+"Extract DBS and trim handle between DBS and ABC."
 rule extract_dbs:
-    "Extract DBS and trim handle between DBS and ABC."
     output:
         reads="{dir}/dbs-raw.fastq.gz"
     input:
-        reads="{dir}/trimmed-3prim.fastq.gz"
-    log: "{dir}/extract-dbs.log"
+        reads="{dir}/reads.fastq.gz"
+    log: "{dir}/log_files/cutadapt-extract-dbs.log"
     threads: 20
     shell:
         "cutadapt"
@@ -43,19 +29,22 @@ rule extract_dbs:
         " {input.reads}"
         " > {log}"
 
-rule trim_to_abc:
-    "Trim 3' end for coupling sequence between DBS and ABC."
+
+"Extract ABC and UMI."
+rule extract_abc_umi:
     output:
         reads="{dir}/trimmed-abc.fastq.gz"
     input:
-        reads="{dir}/trimmed-3prim.fastq.gz"
-    log: "{dir}/reads-3prim.log"
+        reads="{dir}/reads.fastq.gz"
+    log: "{dir}/log_files/cutadapt-extract-abc-umi.log"
     threads: 20
     shell:
         "cutadapt"
-        " -g {handles[Sequence][h2]}"
+        " -g ^{handles[Sequence][h1]}{dbs}{handles[Sequence][h2]}...{handles[Sequence][h3]}"
         " --discard-untrimmed"
         " -e 0.2"
+        " -m {abc_umi_len}"
+        " -M {abc_umi_len}"
         " -j {threads}"
         " -o {output.reads}"
         " {input.reads}"
@@ -63,34 +52,37 @@ rule trim_to_abc:
 
 ## ABCs
 
+"Identifies ABC and trims it to give ABC-specific UMI fastq files."
 rule identify_abc:
-    "Identifies ABC and trims it to give ABC-specific UMI fastq files."
     output:
-        reads="{dir}/{abc}-UMI-raw.fastq.gz"
+        reads="{dir}/{sample}-UMI-raw.fastq.gz"
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/id-{abc}.log"
+    log: "{dir}/log_files/cutadapt-id-abc-{sample}.log"
     threads: 20
+    params:
+        seq = lambda wildcards: abc['Barcode-sequence'][wildcards.sample]
     shell:
         "cutadapt"
-        " -g ^{wildcards.abc}"
-        " -m 6"
-        " -M 6"
+        " -g ^{params.seq}"
+        " -m {config[umi_len]}"
+        " -M {config[umi_len]}"
         " -e 0.2"
         " -j {threads}"
         " -o {output.reads}"
         " {input.reads}"
         " > {log}"
 
+
 # Starcode clustering
 
+"Cluster DBS sequence using starcode"
 rule dbs_cluster:
-    "Cluster DBS sequence using starcode"
     output:
         clusters="{dir}/dbs-clusters.txt"
     input:
         reads="{dir}/dbs-raw.fastq.gz"
-    log: "{dir}/dbs-clusters.log"
+    log: "{dir}/log_files/starcode-dbs-cluster.log"
     threads: 20
     shell:
         "pigz -cd {input.reads} | starcode"
@@ -99,31 +91,33 @@ rule dbs_cluster:
         " -d {config[dbs_cluster_dist]}"
         " -o {output.clusters}"
 
+
+"Cluster ABC sequence using starcode"
 rule abc_cluster:
-    "Cluster ABC sequence using starcode"
     output:
-        "{dir}/{sample}-UMI-clusters.txt"
+        clusters="{dir}/{sample}-UMI-clusters.txt"
     input:
-        "{dir}/{sample}-UMI-raw.fastq.gz"
-    log: "{dir}/{sample}-clusters.log"
+        reads="{dir}/{sample}-UMI-raw.fastq.gz"
+    log: "{dir}/log_files/starcode-abc-cluster-{sample}.log"
     threads: 20
     shell:
-        "pigz -cd {input} | starcode"
+        "pigz -cd {input.reads} | starcode"
         " --print-clusters"
         " -t {threads}"
         " -d {config[abc_cluster_dist]}"
-        " -o {output}"
+        " -o {output.clusters}"
+
 
 # DBS-Pro
 
+"Combine cluster results with original files to error correct them."
 rule error_correct:
-    "Combine cluster results with original files to error correct them."
     output:
         reads="{dir}/{corr_file}-corrected.fasta"
     input:
         reads="{dir}/{corr_file}-raw.fastq.gz",
         clusters="{dir}/{corr_file}-clusters.txt"
-    log: "{dir}/{corr_file}error-correct.log"
+    log: "{dir}/log_files/error-correct-{corr_file}.log"
     threads: 20
     shell:
         "dbspro correctfastq"
@@ -131,16 +125,17 @@ rule error_correct:
         " {input.clusters}"
         " {output.reads}"
 
+
+"Analyzes all result files"
 rule analyze:
-    "Analyzes all result files"
     output:
         counts="{dir}/umi-counts.txt",
         umi_plot="{dir}/umi-density-plot.png",
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fasta="{dir}/dbs-corrected.fasta",
-        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc["Barcode-sequence"])
-    log: "{dir}/analyze.log"
+        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc['Antibody-target'])
+    log: "{dir}/log_files/analyze.log"
     threads: 20
     shell:
         "dbspro analyze"
