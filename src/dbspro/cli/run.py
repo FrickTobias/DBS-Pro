@@ -49,7 +49,7 @@ def main(args):
         'abc_cluster_dist': args.abc_cluster_dist,
         'filter_reads': args.filter_reads,
         'abc_sequences': args.abcs,
-        'handles': args.handles
+        'handles': args.handles,
         'dbs_len': args.dbs_len,
         'umi_len': args.umi_len,
     }
