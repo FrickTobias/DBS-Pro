@@ -50,11 +50,12 @@ def main(args):
         'filter_reads': args.filter_reads,
         'abc_sequences': args.abcs,
         'handles': args.handles
+        'dbs_len': args.dbs_len,
+        'umi_len': args.umi_len,
     }
 
     # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
-    snakefile_path = pkg_resources.resource_filename("dbspro", 'Snakefile')
-    logger.info(f'Snakefile: {snakefile_path}')
+    snakefile_path = pkg_resources.resource_filename("dbspro", 'rules.smk')
     logger.root.handlers = []
     success = snakemake(snakefile_path,
                         snakemakepath='snakemake',  # Needed in snakemake 3.9.0
@@ -104,3 +105,7 @@ def add_arguments(parser):
 
     configs.add_argument("--filter-reads", type=int, default=4, metavar="<READS>",
                          help="Minimum reads required for an ABC to be included in analysis output. DEFAULT: 4")
+    configs.add_argument("--dbs-len", type=int, default=20, metavar="<LENGTH>",
+                         help="Length of DBS barcode sequence in construct. DEFAULT: 20")
+    configs.add_argument("--umi-len", type=int, default=6, metavar="<LENGTH>",
+                         help="Length of UMI sequence in construct. DEFAULT: 6")
