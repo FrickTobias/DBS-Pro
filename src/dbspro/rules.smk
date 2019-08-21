@@ -1,11 +1,15 @@
 import pandas as pd
-
+import dnaio
 # Read sample and handles files.
-abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
+#abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
+with dnaio.open(config["abc_sequences"], fileformat="fasta", mode="r") as abc_fasta:
+    abc = pd.DataFrame([{"Sequence": entry.sequence, "Target": entry.name} for entry in abc_fasta])
+    abc = abc.set_index("Target", drop=False)
+
 handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
 
 # Get required values
-abc_len = list(map(len, abc['Barcode-sequence']))[0]    # Assumes that all ABC are same length
+abc_len = list(map(len, abc['Sequence']))[0]    # Assumes that all ABC are same length
 abc_umi_len = abc_len + config["umi_len"]
 dbs = "N"*config["dbs_len"]
 
@@ -61,7 +65,7 @@ rule identify_abc:
     log: "{dir}/log_files/cutadapt-id-abc-{sample}.log"
     threads: 20
     params:
-        seq = lambda wildcards: abc['Barcode-sequence'][wildcards.sample]
+        seq = lambda wildcards: abc['Sequence'][wildcards.sample]
     shell:
         "cutadapt"
         " -g ^{params.seq}"
@@ -134,7 +138,7 @@ rule analyze:
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fasta="{dir}/dbs-corrected.fasta",
-        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc['Antibody-target'])
+        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc['Target'])
     log: "{dir}/log_files/analyze.log"
     threads: 20
     shell:

@@ -76,8 +76,8 @@ def add_arguments(parser):
                          help="Path to tsv file containing the name and sequence of handles h1, h2 and h3 in the "
                               "construct structure. DEFAULT: Use file handles.tsv in construct-info.")
     parser.add_argument('abcs', default=None, type=str, metavar='<TSV-FILE>',
-                         help="Path to tsv file containing the name and sequence of ABCs. "
-                              "DEFAULT: Use file ABC-sequences.tsv in construct-info.")
+                         help="Path to fasta file containing the name and sequence of ABCs. "
+                              "DEFAULT: Use file ABC-sequences.fasta in construct-info.")
     parser.add_argument('targets', nargs='*', metavar='<TARGETS>',
                         default=['umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'],
                         help='File(s) to create excluding paths). If omitted, the full pipeline is run.')
