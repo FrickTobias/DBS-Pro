@@ -9,6 +9,9 @@ abc_len = list(map(len, abc['Barcode-sequence']))[0]    # Assumes that all ABC a
 abc_umi_len = abc_len + config["umi_len"]
 dbs = "N"*config["dbs_len"]
 
+rule all:
+    input: 'umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'
+
 # Cutadapt trimming
 
 "Extract DBS and trim handle between DBS and ABC."
