@@ -6,8 +6,28 @@ import logging
 import os
 import re
 import subprocess
+import dnaio
+import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+
+def get_abcs(abc_fasta_file):
+    """
+    Helper function to get ABC sequences and names into pandas dataframe
+    :param abc_fasta_file:
+    :return: dataframe:
+    """
+    with dnaio.open(abc_fasta_file, fileformat="fasta", mode="r") as abc_fasta:
+        abc = pd.DataFrame([{"Sequence": entry.sequence, "Target": entry.name} for entry in abc_fasta])
+        abc = abc.set_index("Target", drop=False)
+
+    # Loop over sequences and confirm that they are anchored for cutadapt
+    for i, row in abc.iterrows():
+        assert row['Sequence'].startswith('^'), f"Sequnences in {abc_fasta_file} need to be anchored. " \
+                                                f"Add '^' to the start of all ABC sequences."
+
+    return abc
 
 
 class FileReader(object):
