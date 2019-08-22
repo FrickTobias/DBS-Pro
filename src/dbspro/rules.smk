@@ -1,15 +1,14 @@
 import pandas as pd
 import dnaio
-# Read sample and handles files.
-#abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
-with dnaio.open(config["abc_sequences"], fileformat="fasta", mode="r") as abc_fasta:
-    abc = pd.DataFrame([{"Sequence": entry.sequence, "Target": entry.name} for entry in abc_fasta])
-    abc = abc.set_index("Target", drop=False)
 
+from dbspro.utils import get_abcs
+
+# Read sample and handles files.
+abc = get_abcs(config["abc_sequences"])
 handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
 
 # Get required values
-abc_len = list(map(len, abc['Sequence']))[0]    # Assumes that all ABC are same length
+abc_len = list(map(len, abc['Sequence']))[0] - 1    # Assumes same length, remove one as anchored sequences
 abc_umi_len = abc_len + config["umi_len"]
 dbs = "N"*config["dbs_len"]
 
@@ -56,27 +55,21 @@ rule extract_abc_umi:
 
 ## ABCs
 
-"Identifies ABC and trims it to give ABC-specific UMI fastq files."
-rule identify_abc:
+"Demultiplexes ABC sequnces and trims it to give ABC-specific UMI fastq files."
+rule demultiplex_abc:
     output:
-        reads="{dir}/{sample}-UMI-raw.fastq.gz"
+        reads=touch(expand("{{dir}}/ABCs/{name}-UMI-raw.fastq.gz", name=abc['Target']))
     input:
         reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/log_files/cutadapt-id-abc-{sample}.log"
-    threads: 20
-    params:
-        seq = lambda wildcards: abc['Sequence'][wildcards.sample]
+    log: "{dir}/log_files/cutadapt-id-abc.log"
     shell:
         "cutadapt"
-        " -g ^{params.seq}"
-        " -m {config[umi_len]}"
-        " -M {config[umi_len]}"
+        " -g file:{config[abc_sequences]}"
+        " --no-indels"
         " -e 0.2"
-        " -j {threads}"
-        " -o {output.reads}"
+        " -o {wildcards.dir}/ABCs/{{name}}-UMI-raw.fastq.gz"
         " {input.reads}"
         " > {log}"
-
 
 # Starcode clustering
 
@@ -93,23 +86,27 @@ rule dbs_cluster:
         " --print-clusters"
         " -t {threads}"
         " -d {config[dbs_cluster_dist]}"
-        " -o {output.clusters}"
+        " -o {output.clusters} 2> {log}"
 
 
-"Cluster ABC sequence using starcode"
+"Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)"
+" a empty output file will also be created."
 rule abc_cluster:
     output:
-        clusters="{dir}/{sample}-UMI-clusters.txt"
+        clusters="{dir}/ABCs/{sample}-UMI-clusters.txt"
     input:
-        reads="{dir}/{sample}-UMI-raw.fastq.gz"
-    log: "{dir}/log_files/starcode-abc-cluster-{sample}.log"
+        reads="{dir}/ABCs/{sample}-UMI-raw.fastq.gz"
+    log: "{dir}/ABCs/log_files/starcode-abc-cluster-{sample}.log"
     threads: 20
     shell:
-        "pigz -cd {input.reads} | starcode"
+        "if [ -s {input.reads} ]; then"
+        " pigz -cd {input.reads} | starcode"
         " --print-clusters"
         " -t {threads}"
         " -d {config[abc_cluster_dist]}"
-        " -o {output.clusters}"
+        " -o {output.clusters} 2> {log};"
+        " else touch {output.clusters};"
+        " fi"
 
 
 # DBS-Pro
@@ -129,7 +126,6 @@ rule error_correct:
         " {input.clusters}"
         " {output.reads}"
 
-
 "Analyzes all result files"
 rule analyze:
     output:
@@ -138,7 +134,7 @@ rule analyze:
         reads_plot="{dir}/read-density-plot.png"
     input:
         dbs_fasta="{dir}/dbs-corrected.fasta",
-        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc['Target'])
+        abc_fastas=expand("{{dir}}/ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
     log: "{dir}/log_files/analyze.log"
     threads: 20
     shell:
