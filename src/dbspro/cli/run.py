@@ -65,7 +65,8 @@ def main(args):
                         config=configs_dict,
                         cores=args.cores,
                         printshellcmds=True,
-                        targets=targets_with_path)
+                        targets=targets_with_path,
+                        workdir=args.directory)
 
     sys.exit(0 if success else 1)
 
