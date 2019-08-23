@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 
-print(os.getcwd())
 # Read sample and handles files.
 abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
 handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
@@ -10,6 +9,9 @@ handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
 abc_len = list(map(len, abc['Barcode-sequence']))[0]    # Assumes that all ABC are same length
 abc_umi_len = abc_len + config["umi_len"]
 dbs = "N"*config["dbs_len"]
+
+
+# Define final targets for pipeline. Currently they are the output of rule 'analyze'
 
 rule all:
     input: 'umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'
