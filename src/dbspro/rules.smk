@@ -1,5 +1,6 @@
 import pandas as pd
 import dnaio
+import os
 
 from dbspro.utils import get_abcs
 
@@ -12,15 +13,21 @@ abc_len = list(map(len, abc['Sequence']))[0] - 1    # Assumes same length, remov
 abc_umi_len = abc_len + config["umi_len"]
 dbs = "N"*config["dbs_len"]
 
+
+# Define final targets for pipeline. Currently they are the output of rule 'analyze'
+
+rule all:
+    input: 'umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'
+
 # Cutadapt trimming
 
 "Extract DBS and trim handle between DBS and ABC."
 rule extract_dbs:
     output:
-        reads="{dir}/dbs-raw.fastq.gz"
+        reads="dbs-raw.fastq.gz"
     input:
-        reads="{dir}/reads.fastq.gz"
-    log: "{dir}/log_files/cutadapt-extract-dbs.log"
+        reads="reads.fastq.gz"
+    log: "log_files/cutadapt-extract-dbs.log"
     threads: 20
     shell:
         "cutadapt"
@@ -36,10 +43,10 @@ rule extract_dbs:
 "Extract ABC and UMI."
 rule extract_abc_umi:
     output:
-        reads="{dir}/trimmed-abc.fastq.gz"
+        reads="trimmed-abc.fastq.gz"
     input:
-        reads="{dir}/reads.fastq.gz"
-    log: "{dir}/log_files/cutadapt-extract-abc-umi.log"
+        reads="reads.fastq.gz"
+    log: "log_files/cutadapt-extract-abc-umi.log"
     threads: 20
     shell:
         "cutadapt"
@@ -58,16 +65,16 @@ rule extract_abc_umi:
 "Demultiplexes ABC sequnces and trims it to give ABC-specific UMI fastq files."
 rule demultiplex_abc:
     output:
-        reads=touch(expand("{{dir}}/ABCs/{name}-UMI-raw.fastq.gz", name=abc['Target']))
+        reads=touch(expand("ABCs/{name}-UMI-raw.fastq.gz", name=abc['Target']))
     input:
-        reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/log_files/cutadapt-id-abc.log"
+        reads="trimmed-abc.fastq.gz"
+    log: "log_files/cutadapt-id-abc.log"
     shell:
         "cutadapt"
         " -g file:{config[abc_sequences]}"
         " --no-indels"
         " -e 0.2"
-        " -o {wildcards.dir}/ABCs/{{name}}-UMI-raw.fastq.gz"
+        " -o ABCs/{{name}}-UMI-raw.fastq.gz"
         " {input.reads}"
         " > {log}"
 
@@ -76,10 +83,10 @@ rule demultiplex_abc:
 "Cluster DBS sequence using starcode"
 rule dbs_cluster:
     output:
-        clusters="{dir}/dbs-clusters.txt"
+        clusters="dbs-clusters.txt"
     input:
-        reads="{dir}/dbs-raw.fastq.gz"
-    log: "{dir}/log_files/starcode-dbs-cluster.log"
+        reads="dbs-raw.fastq.gz"
+    log: "log_files/starcode-dbs-cluster.log"
     threads: 20
     shell:
         "pigz -cd {input.reads} | starcode"
@@ -93,10 +100,10 @@ rule dbs_cluster:
 " a empty output file will also be created."
 rule abc_cluster:
     output:
-        clusters="{dir}/ABCs/{sample}-UMI-clusters.txt"
+        clusters="ABCs/{sample}-UMI-clusters.txt"
     input:
-        reads="{dir}/ABCs/{sample}-UMI-raw.fastq.gz"
-    log: "{dir}/ABCs/log_files/starcode-abc-cluster-{sample}.log"
+        reads="ABCs/{sample}-UMI-raw.fastq.gz"
+    log: "ABCs/log_files/starcode-abc-cluster-{sample}.log"
     threads: 20
     shell:
         "if [ -s {input.reads} ]; then"
@@ -114,11 +121,11 @@ rule abc_cluster:
 "Combine cluster results with original files to error correct them."
 rule error_correct:
     output:
-        reads="{dir}/{corr_file}-corrected.fasta"
+        reads="{corr_file}-corrected.fasta"
     input:
-        reads="{dir}/{corr_file}-raw.fastq.gz",
-        clusters="{dir}/{corr_file}-clusters.txt"
-    log: "{dir}/log_files/error-correct-{corr_file}.log"
+        reads="{corr_file}-raw.fastq.gz",
+        clusters="{corr_file}-clusters.txt"
+    log: "log_files/error-correct-{corr_file}.log"
     threads: 20
     shell:
         "dbspro correctfastq"
@@ -129,13 +136,13 @@ rule error_correct:
 "Analyzes all result files"
 rule analyze:
     output:
-        counts="{dir}/umi-counts.txt",
-        umi_plot="{dir}/umi-density-plot.png",
-        reads_plot="{dir}/read-density-plot.png"
+        counts="umi-counts.txt",
+        umi_plot="umi-density-plot.png",
+        reads_plot="read-density-plot.png"
     input:
-        dbs_fasta="{dir}/dbs-corrected.fasta",
-        abc_fastas=expand("{{dir}}/ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
-    log: "{dir}/log_files/analyze.log"
+        dbs_fasta="dbs-corrected.fasta",
+        abc_fastas=expand("ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
+    log: "log_files/analyze.log"
     threads: 20
     shell:
         "dbspro analyze"

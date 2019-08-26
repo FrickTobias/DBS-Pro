@@ -26,7 +26,7 @@ def main(args):
         logging.info(f'Output directory {args.directory} created.')
 
     # Append full path to targets.
-    targets_with_path = [f"{args.directory}/{t}" for t in args.targets]
+    targets_with_path = [f"{args.directory}/{t}" for t in args.targets] if args.targets else None
 
     # Check if correct file exists in output directory.
     # If not, try using the input fastq argument if given.
@@ -65,7 +65,8 @@ def main(args):
                         config=configs_dict,
                         cores=args.cores,
                         printshellcmds=True,
-                        targets=targets_with_path)
+                        targets=targets_with_path,
+                        workdir=args.directory)
 
     sys.exit(0 if success else 1)
 
@@ -79,7 +80,6 @@ def add_arguments(parser):
                          help="Path to fasta file containing the name and sequence of ABCs. "
                               "DEFAULT: Use file ABC-sequences.fasta in construct-info.")
     parser.add_argument('targets', nargs='*', metavar='<TARGETS>',
-                        default=['umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'],
                         help='File(s) to create excluding paths). If omitted, the full pipeline is run.')
     # Options
     parser.add_argument("-n", "--dryrun", default=False, action='store_true',
