@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 # Read sample and handles files.
 abc = pd.read_csv(config["abc_sequences"], sep='\t').set_index("Antibody-target", drop=False)
@@ -9,15 +10,21 @@ abc_len = list(map(len, abc['Barcode-sequence']))[0]    # Assumes that all ABC a
 abc_umi_len = abc_len + config["umi_len"]
 dbs = "N"*config["dbs_len"]
 
+
+# Define final targets for pipeline. Currently they are the output of rule 'analyze'
+
+rule all:
+    input: 'umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'
+
 # Cutadapt trimming
 
 "Extract DBS and trim handle between DBS and ABC."
 rule extract_dbs:
     output:
-        reads="{dir}/dbs-raw.fastq.gz"
+        reads="dbs-raw.fastq.gz"
     input:
-        reads="{dir}/reads.fastq.gz"
-    log: "{dir}/log_files/cutadapt-extract-dbs.log"
+        reads="reads.fastq.gz"
+    log: "log_files/cutadapt-extract-dbs.log"
     threads: 20
     shell:
         "cutadapt"
@@ -33,10 +40,10 @@ rule extract_dbs:
 "Extract ABC and UMI."
 rule extract_abc_umi:
     output:
-        reads="{dir}/trimmed-abc.fastq.gz"
+        reads="trimmed-abc.fastq.gz"
     input:
-        reads="{dir}/reads.fastq.gz"
-    log: "{dir}/log_files/cutadapt-extract-abc-umi.log"
+        reads="reads.fastq.gz"
+    log: "log_files/cutadapt-extract-abc-umi.log"
     threads: 20
     shell:
         "cutadapt"
@@ -55,10 +62,10 @@ rule extract_abc_umi:
 "Identifies ABC and trims it to give ABC-specific UMI fastq files."
 rule identify_abc:
     output:
-        reads="{dir}/{sample}-UMI-raw.fastq.gz"
+        reads="{sample}-UMI-raw.fastq.gz"
     input:
-        reads="{dir}/trimmed-abc.fastq.gz"
-    log: "{dir}/log_files/cutadapt-id-abc-{sample}.log"
+        reads="trimmed-abc.fastq.gz"
+    log: "log_files/cutadapt-id-abc-{sample}.log"
     threads: 20
     params:
         seq = lambda wildcards: abc['Barcode-sequence'][wildcards.sample]
@@ -79,10 +86,10 @@ rule identify_abc:
 "Cluster DBS sequence using starcode"
 rule dbs_cluster:
     output:
-        clusters="{dir}/dbs-clusters.txt"
+        clusters="dbs-clusters.txt"
     input:
-        reads="{dir}/dbs-raw.fastq.gz"
-    log: "{dir}/log_files/starcode-dbs-cluster.log"
+        reads="dbs-raw.fastq.gz"
+    log: "log_files/starcode-dbs-cluster.log"
     threads: 20
     shell:
         "pigz -cd {input.reads} | starcode"
@@ -95,10 +102,10 @@ rule dbs_cluster:
 "Cluster ABC sequence using starcode"
 rule abc_cluster:
     output:
-        clusters="{dir}/{sample}-UMI-clusters.txt"
+        clusters="{sample}-UMI-clusters.txt"
     input:
-        reads="{dir}/{sample}-UMI-raw.fastq.gz"
-    log: "{dir}/log_files/starcode-abc-cluster-{sample}.log"
+        reads="{sample}-UMI-raw.fastq.gz"
+    log: "log_files/starcode-abc-cluster-{sample}.log"
     threads: 20
     shell:
         "pigz -cd {input.reads} | starcode"
@@ -113,11 +120,11 @@ rule abc_cluster:
 "Combine cluster results with original files to error correct them."
 rule error_correct:
     output:
-        reads="{dir}/{corr_file}-corrected.fasta"
+        reads="{corr_file}-corrected.fasta"
     input:
-        reads="{dir}/{corr_file}-raw.fastq.gz",
-        clusters="{dir}/{corr_file}-clusters.txt"
-    log: "{dir}/log_files/error-correct-{corr_file}.log"
+        reads="{corr_file}-raw.fastq.gz",
+        clusters="{corr_file}-clusters.txt"
+    log: "log_files/error-correct-{corr_file}.log"
     threads: 20
     shell:
         "dbspro correctfastq"
@@ -129,13 +136,13 @@ rule error_correct:
 "Analyzes all result files"
 rule analyze:
     output:
-        counts="{dir}/umi-counts.txt",
-        umi_plot="{dir}/umi-density-plot.png",
-        reads_plot="{dir}/read-density-plot.png"
+        counts="umi-counts.txt",
+        umi_plot="umi-density-plot.png",
+        reads_plot="read-density-plot.png"
     input:
-        dbs_fasta="{dir}/dbs-corrected.fasta",
-        abc_fastas=expand("{{dir}}/{abc}-UMI-corrected.fasta", abc=abc['Antibody-target'])
-    log: "{dir}/log_files/analyze.log"
+        dbs_fasta="dbs-corrected.fasta",
+        abc_fastas=expand("{abc}-UMI-corrected.fasta", abc=abc['Antibody-target'])
+    log: "log_files/analyze.log"
     threads: 20
     shell:
         "dbspro analyze"
