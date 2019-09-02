@@ -57,7 +57,7 @@ def file_name_fetcher(construct):
 
     file_dict = {
         "h":"/construct-info/handles.tsv",
-        "A":"/construct-info/ABC-sequences.tsv"
+        "A":"/construct-info/ABC-sequences.fasta"
     }
 
     dbs_pro_folder = os.path.realpath(__file__).rsplit("/",4)[0]

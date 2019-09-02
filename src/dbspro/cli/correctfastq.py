@@ -5,6 +5,7 @@ import logging
 from tqdm import tqdm
 import dnaio
 from collections import Counter
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,9 @@ def main(args):
 
     logger.info(f"Starting analysis")
     logger.info(f"Processing file: {args.err_corr}")
+
+    if os.stat(args.err_corr).st_size == 0:
+        logging.warning(f"File {args.err_corr} is empty.")
 
     err_corr = dict()
     clusters = set()
