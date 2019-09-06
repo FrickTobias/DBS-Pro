@@ -100,20 +100,17 @@ rule dbs_cluster:
 " a empty output file will also be created."
 rule abc_cluster:
     output:
-        clusters="ABCs/{sample}-UMI-clusters.txt"
+        reads="ABCs/{sample}-UMI-corrected.fasta"
     input:
-        reads="ABCs/{sample}-UMI-raw.fastq.gz"
-    log: "ABCs/log_files/starcode-abc-cluster-{sample}.log"
-    threads: 20
+        abc_reads="ABCs/{sample}-UMI-raw.fastq.gz",
+        dbs_corrected="dbs-corrected.fasta"
+    log: "ABCs/log_files/splitcluster-{sample}.log"
     shell:
-        "if [ -s {input.reads} ]; then"
-        " pigz -cd {input.reads} | starcode"
-        " --print-clusters"
-        " -t {threads}"
-        " -d {config[abc_cluster_dist]}"
-        " -o {output.clusters} 2> {log};"
-        " else touch {output.clusters};"
-        " fi"
+        "dbspro splitcluster"
+        " {input.dbs_corrected}"
+        " {input.abc_reads}"
+        " -o {output.reads}"
+        " -l {config[umi_len]} 2> {log}"
 
 
 # DBS-Pro
