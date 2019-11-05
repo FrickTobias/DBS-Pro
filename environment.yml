@@ -1,4 +1,4 @@
-# Dependencies python=3.6 cutadapt starcode pysam seaborn numpy matplotlib snakemake-minimal tqdm
+# Dependencies python=3.6 cutadapt starcode pysam seaborn numpy matplotlib snakemake-minimal tqdm jupyter
 channels:
   - conda-forge
   - defaults
@@ -29,6 +29,7 @@ dependencies:
   - htslib=1.9
   - idna=2.8
   - jsonschema=3.0.1
+  - jupyter=1.0.0
   - kiwisolver=1.1.0
   - krb5=1.16.3
   - libblas=3.8.0
