@@ -59,7 +59,7 @@ def main(args):
 
     logging.info(f"Writing output files")
     df_umis.to_csv("umi_counts.tsv", sep="\t")
-    df_umis.to_csv("read_counts.tsv", sep="\t")
+    df_reads.to_csv("read_counts.tsv", sep="\t")
 
     logger.info(f"Total DBS count: {len(result_dict):9,}")
     logger.info(f"UMIs without BC: {umi_without_proper_bc:9,}")
