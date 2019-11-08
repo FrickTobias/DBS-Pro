@@ -1,15 +1,8 @@
-###################################
-# Droplets barcode sequence & UMI #
-###################################
+############
+# Settings #
+############
 barcode_len: 20 # Length of barcode sequence
 UMI_len: 6
-
-##############################
-# Antibody barcode sequences #
-##############################
-ABC1: GCGTA
-ABC2: ATAGC
-ABC3: GTGCA
 
 ####################
 # Handle sequences #
