@@ -1,0 +1,19 @@
+###################################
+# Droplets barcode sequence & UMI #
+###################################
+barcode_len: 20 # Length of barcode sequence
+UMI_len: 6
+
+##############################
+# Antibody barcode sequences #
+##############################
+ABC1: GCGTA
+ABC2: ATAGC
+ABC3: GTGCA
+
+####################
+# Handle sequences #
+####################
+h1: CGATGCTAATCAGATCA # h1 adaptor sequence, appears before droplet barcode
+h2: AAGAGTCAATAGACCATCTAACAGGATTCAGGTA # h2 adaptor sequence, appears after droplet barcode
+h3: TTATATCACGACAAGAG # h3 adaptor sequence, appears after Ab-barcode and UMI
