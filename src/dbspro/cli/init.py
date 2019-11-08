@@ -8,17 +8,18 @@ import sys
 import dnaio
 from pathlib import Path
 from importlib_resources import read_binary
+import pkg_resources
 
 logger = logging.getLogger(__name__)
 
 CONFIGURATION_FILE_NAME = "dbspro.yaml"
-ABC_FILE_NAME = "ABC-sequences.fa"
+ABC_FILE_NAME = "ABC-sequences.fasta"
 
 
 def add_arguments(parser):
     parser.add_argument("reads", type=Path, help="Read file (.fastq.gz)")
     parser.add_argument("directory", type=Path, help="New analysis directory to create")
-    parser.add_argument("--abc", default="../construct-info/ABC-sequnces.fasta", type=str,
+    parser.add_argument("--abc", default=pkg_resources.resource_filename("dbspro", "ABC-sequences.fasta"), type=str,
                         metavar="ABC-sequences.fasta",
                         help="Antibody barcode sequence (ABC) sequnce fasta file")
 
