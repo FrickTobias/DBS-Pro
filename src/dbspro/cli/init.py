@@ -21,7 +21,7 @@ def add_arguments(parser):
     parser.add_argument("directory", type=Path, help="New analysis directory to create")
     parser.add_argument("--abc", default=pkg_resources.resource_filename("dbspro", "ABC-sequences.fasta"), type=str,
                         metavar="ABC-sequences.fasta",
-                        help="Antibody barcode sequence (ABC) sequnce fasta file")
+                        help="Antibody barcode (ABC) sequence fasta file")
 
     return parser
 
@@ -39,7 +39,7 @@ def init(directory: Path, reads: Path, abc: str):
 
     logger.info(f"Directory {directory} initialized.")
     logger.info(
-        'Edit %s/%s and %s/%s, then run "cd %s && dbspro run" to start the analysis',
+        "Edit %s/%s and run "cd %s && dbspro run" to start the analysis.",
         directory,
         CONFIGURATION_FILE_NAME,
         directory,
