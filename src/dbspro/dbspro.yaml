@@ -1,7 +1,7 @@
 ############
 # Settings #
 ############
-barcode_len: 20 # Length of barcode sequence
+DBS_len: 20 # Length of barcode sequence
 UMI_len: 6
 
 ####################
