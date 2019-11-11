@@ -1,11 +1,10 @@
 """
-Analyzes demultiplexed and error corrected data
+Analyzes demultiplexed and error corrected data and output data files umi_count.tsv and read_count.tsv with
+ABC umi and read counts for each DBS. Also output some statistics.
 """
 
 import logging
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import dnaio
 import copy
 from collections import defaultdict
@@ -56,10 +55,11 @@ def main(args):
         logger.info(f"Finished reading file: {current_abc}")
 
     # Barcode-globbing umi/read counter for all ABC:s
-    df_out, abc_counter = make_df_from_dict(result_dict, abc_names, sum_filter=args.filter)
+    df_umis, df_reads, abc_counter = make_df_from_dict(result_dict, abc_names, sum_filter=args.filter)
 
-    logging.info(f"Writing output file to: {args.output}")
-    df_out.to_csv(args.output, sep="\t")
+    logging.info(f"Writing output files")
+    df_umis.to_csv("umi_counts.tsv", sep="\t")
+    df_reads.to_csv("read_counts.tsv", sep="\t")
 
     logger.info(f"Total DBS count: {len(result_dict):9,}")
     logger.info(f"UMIs without BC: {umi_without_proper_bc:9,}")
@@ -80,14 +80,6 @@ def main(args):
     print(df_data)
     print()
 
-    # Plotting
-    logger.info(f"Prepping data for plot")
-
-    read_dict_for_plotting, umi_dict_for_plotting = format_data_for_plotting(result_dict)
-
-    plot_density_correlation_matrix(args.read_plot, read_dict_for_plotting, abc_names.values())
-    plot_density_correlation_matrix(args.umi_plot, umi_dict_for_plotting, abc_names.values())
-
     logger.info(f"Finished")
 
 
@@ -95,25 +87,34 @@ def make_df_from_dict(result_dict, abc_names, sum_filter=0):
     abc_counter = {abc: {"umis": list(), "reads": list()} for abc in abc_names.values()}
 
     # Output file writing and
-    output_list = list()
+    output_umis = list()
+    output_reads = list()
     for bc in iter(result_dict):
-        output_line = {'BC': bc}
+        output_umis_line = {'BC': bc}
+        output_reads_line = output_umis_line.copy()
 
         for abc in abc_names.values():
-            output_line[abc] = len(result_dict[bc][abc])
+            umi_count = len(result_dict[bc][abc])
+            read_count = sum(result_dict[bc][abc].values())
+
+            output_umis_line[abc] = umi_count
+            output_reads_line[abc] = read_count
 
             # Add statistics if passing filter.
             if sum(result_dict[bc][abc].values()) >= sum_filter:
                 # Add number of UMI:s
-                abc_counter[abc]['umis'].append(len(result_dict[bc][abc]))
+                abc_counter[abc]['umis'].append(umi_count)
                 # Add number of reads
-                abc_counter[abc]['reads'].append(sum(result_dict[bc][abc].values()))
+                abc_counter[abc]['reads'].append(read_count)
 
-        output_list.append(output_line)
+        output_umis.append(output_umis_line)
+        output_reads.append(output_reads_line)
 
-    # Create dataframe with barcode as index and columns with ABC data. Export to tsv.
-    df = pd.DataFrame(output_list, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
-    return df, abc_counter
+    # Create dataframe with barcode as index and columns with ABC data.
+    df_umis = pd.DataFrame(output_umis, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
+    df_reads = pd.DataFrame(output_reads, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
+
+    return df_umis, df_reads, abc_counter
 
 
 def n50_counter(input_list):
@@ -132,54 +133,9 @@ def n50_counter(input_list):
             return num
 
 
-def format_data_for_plotting(result_dict):
-    """
-    Divides result dict to plot-ready dicts
-    :param result_dict: dict[dbs][abc][umi] = read_count
-    :return:    dict[dbs][abc] = read_count
-                dict[dbs][abc] = umi_count
-    """
-    read_dict_for_plotting = dict()
-    umi_dict_for_plotting = dict()
-    for dbs in result_dict.keys():
-        read_dict_for_plotting[dbs] = dict()
-        umi_dict_for_plotting[dbs] = dict()
-        for abc in result_dict[dbs].keys():
-            read_dict_for_plotting[dbs][abc] = sum(result_dict[dbs][abc].values())
-            umi_dict_for_plotting[dbs][abc] = len(result_dict[dbs][abc].keys())
-
-    return read_dict_for_plotting, umi_dict_for_plotting
-
-
-def plot_density_correlation_matrix(name, result_dict, abc_names):
-    """
-    Plot density correlation matrix.
-    :param name:
-    :param result_dict:
-    :param abc_names:
-    :return:
-    """
-    df_list = [dbs_dict for dbs_dict in result_dict.values()]
-
-    df = pd.DataFrame(df_list, columns=abc_names)
-    g = sns.pairplot(df, diag_kind="kde", diag_kws=dict(shade=True, bw=.05, vertical=False))
-
-    for x in range(len(abc_names)):
-        for y in range(len(abc_names)):
-            g.axes[x, y].set_xlim((0, 50))
-            g.axes[x, y].set_ylim((0, 50))
-
-    logger.info(f"Plotting: {name}")
-
-    plt.savefig(name)
-
-
 def add_arguments(parser):
     # Arguments
     parser.add_argument("dbs", help="Reads with only DBS seq in fastq format.")
-    parser.add_argument("output", help="output file")
-    parser.add_argument("read_plot", help="Filename for output reads/DBS pair plot (will be .png)")
-    parser.add_argument("umi_plot", help="Filename for output UMI:s/DBS pair plot (will be .png)")
     parser.add_argument("umi_abc", nargs='+',
                         help="Reads with only UMI seq (unique molecular identifier) for ABC (antibody barcode) files"
                              " in fastq format")

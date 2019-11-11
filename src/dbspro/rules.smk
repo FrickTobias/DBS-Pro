@@ -17,7 +17,7 @@ dbs = "N"*config["dbs_len"]
 # Define final targets for pipeline. Currently they are the output of rule 'analyze'
 
 rule all:
-    input: 'umi-counts.txt', 'umi-density-plot.png', 'read-density-plot.png'
+    input: 'report.html'
 
 # Cutadapt trimming
 
@@ -133,9 +133,8 @@ rule error_correct:
 "Analyzes all result files"
 rule analyze:
     output:
-        counts="umi-counts.txt",
-        umi_plot="umi-density-plot.png",
-        reads_plot="read-density-plot.png"
+        umi_counts="umi_counts.tsv",
+        read_counts="read_counts.tsv"
     input:
         dbs_fasta="dbs-corrected.fasta",
         abc_fastas=expand("ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
@@ -145,7 +144,27 @@ rule analyze:
         "dbspro analyze"
         " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
-        " {output.counts}"
-        " {output.umi_plot}"
-        " {output.reads_plot}"
-        " {input.abc_fastas}"
+        " {input.abc_fastas} > {log}"
+
+rule copy_report:
+    output:
+        "report.ipynb"
+    run:
+        import pkg_resources
+        report_path = pkg_resources.resource_filename("dbspro", 'report_template.ipynb')
+        shell("jupyter nbconvert --to notebook {report_path} --output {output} --output-dir .")
+
+
+rule make_report:
+    output:
+          "report.html"
+    input:
+         nb="report.ipynb",
+         umis="umi_counts.tsv",
+         reads="read_counts.tsv"
+    shell:
+         """
+         jupyter nbconvert --execute --to notebook --inplace {input.nb}
+         jupyter nbconvert --to html {input.nb}
+         """
+
