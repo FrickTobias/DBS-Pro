@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 CONFIGURATION_FILE_NAME = "dbspro.yaml"
 ABC_FILE_NAME = "ABC-sequences.fasta"
+ACCEPTED_FILE_EXT = ".fastq.gz"
 
 
 def add_arguments(parser):
@@ -39,7 +40,7 @@ def init(directory: Path, reads: Path, abc: str):
 
     logger.info(f"Directory {directory} initialized.")
     logger.info(
-        "Edit %s/%s and run "cd %s && dbspro run" to start the analysis.",
+        "Edit %s/%s and run 'cd %s && dbspro run' to start the analysis.",
         directory,
         CONFIGURATION_FILE_NAME,
         directory,
@@ -87,4 +88,9 @@ def create_symlink(readspath, dirname, target):
         src = os.path.relpath(readspath, dirname)
     else:
         src = readspath
+
+    # Check if file has the correct extension
+    if not str(readspath).endswith(ACCEPTED_FILE_EXT):
+        raise FileNotFoundError(f"File {readspath} is not accepted input.")
+
     os.symlink(src, os.path.join(dirname, target))

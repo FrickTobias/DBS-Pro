@@ -11,38 +11,8 @@ from dbspro.utils import available_cpu_count
 
 logger = logging.getLogger(__name__)
 
-accepted_file = "reads.fastq.gz"
-accepted_file_ext = ".fastq.gz"
-
 
 def main(args):
-    # Check if path to output directory is absolute or make it so.
-    if not os.path.isabs(args.directory):
-        args.directory = f"{os.getcwd()}/{args.directory}"
-
-    # Check if directory exists. If not make one.
-    if not os.path.isdir(args.directory):
-        os.mkdir(args.directory)
-        logging.info(f"Output directory {args.directory} created.")
-
-    # Append full path to targets.
-    targets_with_path = [f"{args.directory}/{t}" for t in args.targets] if args.targets else None
-
-    # Check if correct file exists in output directory.
-    # If not, try using the input fastq argument if given.
-    if args.fastq:
-        # Check if path to output directory is absolute or make it so.
-        if not os.path.isabs(args.fastq):
-            args.fastq = f"{os.getcwd()}/{args.fastq}"
-
-        # Check if file has the correct extension
-        if not str(args.fastq).endswith(accepted_file_ext):
-            raise FileNotFoundError(f"File {args.fastq} is not accepted input.")
-
-        # Create symbolic link to file in output directory.
-        os.symlink(args.fastq, f"{args.directory}/{accepted_file}")
-        logging.info("Creating symbolic link for input file in output directory.")
-
     # Create dict containing the paramaters to be passed to the snakefile.
     configs_dict = {
         "dbs_cluster_dist": args.dbs_cluster_dist,
@@ -61,7 +31,7 @@ def main(args):
                         config=configs_dict,
                         cores=args.cores,
                         printshellcmds=True,
-                        targets=targets_with_path,
+                        targets=args.targets,
                         workdir=args.directory)
 
     sys.exit(0 if success else 1)
