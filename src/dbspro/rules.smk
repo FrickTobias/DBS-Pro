@@ -110,6 +110,7 @@ rule abc_cluster:
         " {input.dbs_corrected}"
         " {input.abc_reads}"
         " -o {output.reads}"
+        " -t {config[abc_cluster_dist]}"
         " -l {config[UMI_len]} 2> {log}"
 
 

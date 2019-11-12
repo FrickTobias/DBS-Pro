@@ -31,6 +31,7 @@ def main(args):
     init(args.directory, args.reads, args.abc)
 
 
+
 def init(directory: Path, reads: Path, abc: str):
     if " " in str(directory):
         logger.error("The name of the analysis directory must not contain spaces")

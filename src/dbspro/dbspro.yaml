@@ -10,3 +10,10 @@ UMI_len: 6
 h1: CGATGCTAATCAGATCA # h1 adaptor sequence, appears before droplet barcode
 h2: AAGAGTCAATAGACCATCTAACAGGATTCAGGTA # h2 adaptor sequence, appears after droplet barcode
 h3: TTATATCACGACAAGAG # h3 adaptor sequence, appears after Ab-barcode and UMI
+
+####################
+# Pipeline configs #
+####################
+dbs_cluster_dist: 2 # Maximum edit distance to cluster DBS sequences in Starcode.
+abc_cluster_dist: 1 # Maximum edit distance to cluster ABC sequences in Starcode.
+filter_reads: 4 # Minimum reads required for an ABC to be included in analysis output.
