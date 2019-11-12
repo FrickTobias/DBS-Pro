@@ -3,8 +3,11 @@ set -xoeu pipefail
 
 rm -rf outdir
 
-dbspro run -d outdir -f testdata/reads-10k-DBS.fastq.gz \
-    ../construct-info/handles.tsv ../construct-info/ABC-sequences.fasta
+dbspro init testdata/reads-10k-DBS.fastq.gz outdir
 
-m=$(cat outdir/umi_counts.tsv | md5sum | cut -f 1 -d" ")
-test $m == 62ce11e3ac4fb7428a6bf4bfed84f529
+pushd outdir
+
+dbspro run
+
+m=$(cat umi_counts.tsv | sort | md5sum | cut -f 1 -d" ")
+test $m == 3c31f9634af4238cb0037170104e6d5e

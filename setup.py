@@ -13,7 +13,7 @@ setup(
     license="MIT",
     python_requires=">=3.6",
     package_dir={"": "src"},
-    package_data={"dbspro": ["rules.smk", "report_template.ipynb"]},
+    package_data={"dbspro": ["rules.smk", "report_template.ipynb", "dbspro.yaml", "ABC-sequences.fasta"]},
     packages=find_namespace_packages("src"),
     entry_points={"console_scripts": ["dbspro = dbspro.__main__:main"]},
     classifiers=[

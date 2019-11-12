@@ -5,13 +5,13 @@ import os
 from dbspro.utils import get_abcs
 
 # Read sample and handles files.
-abc = get_abcs(config["abc_sequences"])
-handles = pd.read_csv(config["handles"], sep='\t').set_index("Name", drop=False)
+abc = get_abcs("ABC-sequences.fasta")
+configfile: "dbspro.yaml"
 
 # Get required values
 abc_len = list(map(len, abc['Sequence']))[0] - 1    # Assumes same length, remove one as anchored sequences
-abc_umi_len = abc_len + config["umi_len"]
-dbs = "N"*config["dbs_len"]
+abc_umi_len = abc_len + config["UMI_len"]
+dbs = "N"*config["DBS_len"]
 
 
 # Define final targets for pipeline. Currently they are the output of rule 'analyze'
@@ -31,7 +31,7 @@ rule extract_dbs:
     threads: 20
     shell:
         "cutadapt"
-        " -g ^{handles[Sequence][h1]}...{handles[Sequence][h2]}"
+        " -g ^{config[h1]}...{config[h2]}"
         " --discard-untrimmed"
         " -e 0.2"
         " -j {threads}"
@@ -50,7 +50,7 @@ rule extract_abc_umi:
     threads: 20
     shell:
         "cutadapt"
-        " -g ^{handles[Sequence][h1]}{dbs}{handles[Sequence][h2]}...{handles[Sequence][h3]}"
+        " -g ^{config[h1]}{dbs}{config[h2]}...{config[h3]}"
         " --discard-untrimmed"
         " -e 0.2"
         " -m {abc_umi_len}"
@@ -71,7 +71,7 @@ rule demultiplex_abc:
     log: "log_files/cutadapt-id-abc.log"
     shell:
         "cutadapt"
-        " -g file:{config[abc_sequences]}"
+        " -g file:ABC-sequences.fasta"
         " --no-indels"
         " -e 0.2"
         " -o ABCs/{{name}}-UMI-raw.fastq.gz"
@@ -110,7 +110,8 @@ rule abc_cluster:
         " {input.dbs_corrected}"
         " {input.abc_reads}"
         " -o {output.reads}"
-        " -l {config[umi_len]} 2> {log}"
+        " -t {config[abc_cluster_dist]}"
+        " -l {config[UMI_len]} 2> {log}"
 
 
 # DBS-Pro
