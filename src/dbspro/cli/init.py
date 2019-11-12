@@ -44,9 +44,7 @@ def init(directory: Path, reads: Path, abc: str):
         "Edit %s/%s and run 'cd %s && dbspro run' to start the analysis.",
         directory,
         CONFIGURATION_FILE_NAME,
-        directory,
-        ABC_FILE_NAME,
-        directory,
+        directory
     )
 
 
