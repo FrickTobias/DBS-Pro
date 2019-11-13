@@ -12,17 +12,17 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 
       git clone https://github.com/FrickTobias/DBS-Pro
 
-2. Install all dependencies in a conda environment.
+2. Move into the git folder and install all dependencies in a conda environment.
 
+      cd DBS-Pro
       conda env create -n dbspro -f DBS-Pro/environment.yml
 
 3. Activate the conda environment.
 
       conda activate dbspro
 
-4. Move to the git folder and install the dbspro package.
+4. Install the dbspro package.
 
-      cd DBS-Pro
       pip install -e .
     
 ## Usage
