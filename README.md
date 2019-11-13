@@ -14,7 +14,7 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 
 2. Install all dependencies in a conda environment.
 
-      conda env create -n dbspro -f environment.yml
+      conda env create -n dbspro -f DBS-Pro/environment.yml
 
 3. Activate the conda environment.
 
