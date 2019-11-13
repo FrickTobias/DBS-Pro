@@ -1,4 +1,5 @@
-# Dependencies python=3.6 cutadapt starcode pysam seaborn numpy matplotlib snakemake-minimal tqdm jupyter
+# Whenever this file is updated, you need to run misc/condalock.sh `bash
+# misc/condalock.sh` to create the environment.lock.yml file.
 channels:
   - conda-forge
   - defaults
