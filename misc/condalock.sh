@@ -7,6 +7,17 @@
 
 set -euo pipefail
 
+while getopts "h" OPTION
+do
+    case ${OPTION} in
+         h)
+            printf \
+                "condalock.sh\n\nusage:\n\tbash misc/condalock.sh osx|linux\n\n"
+	        exit 0
+	        ;;
+    esac
+done
+
 if [[ $# -gt 0 ]]; then
     case $1 in
         osx|linux)
