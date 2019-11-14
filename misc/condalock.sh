@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Taken from https://github.com/FrickTobias/BLR/misc/condalock.sh
 # This script creates environment.(osx|linux).lock.yml from environment.yml.
 # It needs to be run manually whenever environment.yml is changed. See also
 # the developer documentation.
