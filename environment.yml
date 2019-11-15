@@ -17,5 +17,5 @@ dependencies:
   - starcode
   - tqdm
   - importlib_resources
-  - snakemake
+  - snakemake-minimal
   - umi_tools
