@@ -8,27 +8,36 @@ This pipeline analyses data sequencing data from DBS-Pro experiments for protein
 
 First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) is installed on your system.
 
-- Clone the git repostory.
+1. Clone the git repository.
 
       git clone https://github.com/FrickTobias/DBS-Pro
 
-- Create an environment and with required dependencies. 
+2. Move into the git folder and install all dependencies in a conda environment.
 
-      conda env create -n dbspro -f environment.yml
+      cd DBS-Pro
+      conda env create -n dbspro -f DBS-Pro/environment.yml
 
-- Activate the environment.
+3. Activate the conda environment.
 
       conda activate dbspro
 
-- Move to the git folder and install dbspro into you environment.
+4. Install the dbspro package.
 
-      cd DBS-Pro
       pip install -e .
     
-## Useage
+## Usage
 
-Basic usage
+Create an analysis folder with the required input files.
+```
+dbspro init <raw-reads.fastq> <output-folder>
+```
+Run the analysis.
+```
+cd <output-folder>
+dbspro run -t <threads>
+```
+For more information use the `-h` (`--help`) option. 
 
-```
-bash DBS-Pro_automation.sh -t <threads> raw-reads.fq output-folder
-```
+## Publications
+
+[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates. Bioconjugate chemistry.](https://pubs.acs.org/doi/abs/10.1021/acs.bioconjchem.9b00548).
