@@ -6,22 +6,13 @@ cache:
   directories:
     - $HOME/.cache/pip
 
-python:
-  - "3.6"
-
-matrix:
-  include:
-    - os: osx
-      language: generic
-    - os: linux
-
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then HOMEBREW_NO_AUTO_UPDATE=1 brew install md5sha1sum; fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - source $HOME/miniconda/etc/profile.d/conda.sh
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set alwgit ays_yes yes --set changeps1 no
   - conda update -q conda
   - conda config --add channels bioconda --add channels conda-forge
   - conda info -a
@@ -32,6 +23,21 @@ before_install:
 install:
   - conda env create -n testenv -f environment.${TRAVIS_OS_NAME}.lock.yml
   - conda activate testenv
+  - conda install pytest
   - pip install .
 
-script: bash tests/run.sh
+script:
+  - tests/run.sh
+
+jobs:
+  include:
+    - name: Linux
+      os: linux
+    - name: macOS
+      os: osx
+    - name: flake8
+      language: python
+      python: "3.6"
+      before_install:
+      install: python3 -m pip install flake8
+      script: flake8 src/ tests/
