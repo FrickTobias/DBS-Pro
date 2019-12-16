@@ -11,21 +11,8 @@ from dbspro.utils import available_cpu_count
 logger = logging.getLogger(__name__)
 
 
-def main(args):
-    # Lines below are modified from: https://github.com/NBISweden/IgDiscover/
-    snakefile_path = pkg_resources.resource_filename("dbspro", "rules.smk")
-    logger.root.handlers = []
-    success = snakemake(snakefile_path,
-                        snakemakepath="snakemake",  # Needed in snakemake 3.9.0
-                        dryrun=args.dryrun,
-                        printdag=args.dag,
-                        quiet=False if not args.dag else True,
-                        cores=args.cores,
-                        printshellcmds=True,
-                        targets=args.targets,
-                        workdir=args.dir)
-
-    sys.exit(0 if success else 1)
+class SnakemakeError(Exception):
+    pass
 
 
 def add_arguments(parser):
@@ -40,4 +27,46 @@ def add_arguments(parser):
                              "pipe output into dot as follows: '$ dbspro run --dag | dot -Tpdf > dag.pdf'")
     parser.add_argument("-j", "--cores", "--jobs", metavar="<JOBS>", type=int, default=available_cpu_count(),
                         help="Maximum number of cores to run in parallel. DEFAULT: Use as many as available.")
+    parser.add_argument('--keepgoing', '-k', default=False, action='store_true',
+                        help='If one job fails, finish the others.')
+    parser.add_argument('--unlock', default=False, action='store_true',
+                        help='Remove a lock on the working directory.')
     parser.add_argument("--dir", help="Path to analysis directory. DEFAULT: CWD")
+
+
+def main(args):
+    targets = args.targets if args.targets else None
+    try:
+        run(args.dryrun, args.cores, args.keepgoing, args.unlock, args.dag, targets)
+    except SnakemakeError:
+        sys.exit(1)
+    sys.exit(0)
+
+
+def run(
+        dryrun: bool = False,
+        cores: int = 4,
+        keepgoing: bool = False,
+        unlock: bool = False,
+        printdag: bool = False,
+        targets=None,
+        workdir=None,
+):
+    # snakemake sets up its own logging, and this cannot be easily changed
+    # (setting keep_logger=True crashes), so remove our own log handler
+    # for now
+    logger.root.handlers = []
+    snakefile_path = pkg_resources.resource_filename("dbspro", "rules.smk")
+    success = snakemake(snakefile_path,
+                        snakemakepath="snakemake",  # Needed in snakemake 3.9.0
+                        dryrun=dryrun,
+                        printdag=printdag,
+                        quiet=False if not printdag else True,
+                        cores=cores,
+                        keepgoing=keepgoing,
+                        unlock=unlock,
+                        printshellcmds=True,
+                        targets=targets,
+                        workdir=workdir)
+    if not success:
+        raise SnakemakeError()

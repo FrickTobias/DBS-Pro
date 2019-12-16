@@ -4,6 +4,11 @@
 DBS_len: 20 # Length of barcode sequence
 UMI_len: 6
 
+##############
+# File names #
+##############
+abc_file: "ABC-sequences.fasta"
+
 ####################
 # Handle sequences #
 ####################
