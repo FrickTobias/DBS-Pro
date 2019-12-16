@@ -3,7 +3,7 @@ set -xoeu pipefail
 
 rm -rf outdir
 
-pytest tests
+pytest -v tests/
 
 dbspro init testdata/reads-10k-DBS.fastq.gz outdir
 
