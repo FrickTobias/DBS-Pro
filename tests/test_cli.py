@@ -17,7 +17,8 @@ def test_init(tmpdir):
 def test_change_config(tmpdir):
     workdir = tmpdir / "analysis"
     init(workdir, TESTDATA_READS, ABC_SEQUENCES)
-    change_config(workdir / "dbspro.yaml", [("dbs_cluster_dist","1")])
+    change_config(workdir / "dbspro.yaml", [("dbs_cluster_dist", "1")])
+
 
 def test_output_files(tmpdir, targets=["report.ipynb", "read_counts.tsv", "umi_counts.tsv"]):
     workdir = tmpdir / "analysis"
@@ -25,4 +26,3 @@ def test_output_files(tmpdir, targets=["report.ipynb", "read_counts.tsv", "umi_c
     run(targets=targets, workdir=workdir)
     for target in targets:
         assert Path(f"{workdir}/{target}").is_file()
-
