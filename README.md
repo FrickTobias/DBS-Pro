@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FrickTobias/DBS-Pro.svg)](https://travis-ci.org/FrickTobias/DBS-Pro)
+[![Build Status](https://travis-ci.org/FrickTobias/DBS-Pro.svg?branch=master)](https://travis-ci.org/FrickTobias/DBS-Pro)
 
 # DBS-Pro Analysis
 
