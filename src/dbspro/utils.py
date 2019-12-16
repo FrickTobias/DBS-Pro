@@ -34,6 +34,7 @@ class FileReader(object):
     """
     Reads input files as generator, handles gzip.
     """
+
     def __init__(self, filehandle, filehandle2=None):
 
         """
@@ -114,7 +115,10 @@ class FileReader(object):
 
                 # Error handling
                 if not read1.header.split()[0] == read2.header.split()[0]:
-                    sys.exit('INPUT ERROR: Paired reads headers does not match.\nINPUT ERROR: Read pair number:\t'+'\nINPUT ERROR: '+str(read1.header)+'\nINPUT ERROR: '+str(read2.header)+'\nINPUT ERROR: Exiting')
+                    sys.exit(
+                        'INPUT ERROR: Paired reads headers does not match.\nINPUT ERROR: Read pair number:\t' +
+                        '\nINPUT ERROR: ' + str(read1.header) + '\nINPUT ERROR: ' + str(read2.header) +
+                        '\nINPUT ERROR: Exiting')
                 line_chunk1 = list()
                 line_chunk2 = list()
                 yield read1, read2
@@ -127,6 +131,7 @@ class FileReader(object):
         self.openfile.close()
         if self.filehandle2:
             self.openfile2.close()
+
 
 class FastqRead(object):
     """
@@ -150,7 +155,7 @@ class FastqRead(object):
         Makes a ready-printable string from a fastq read instance.
         :return: string.
         """
-        return self.header + '\n' + self.seq  + '\n' + self.comment  + '\n' + self.qual + '\n'
+        return self.header + '\n' + self.seq + '\n' + self.comment + '\n' + self.qual + '\n'
 
 
 def available_cpu_count():
@@ -182,7 +187,7 @@ def available_cpu_count():
     # https://github.com/giampaolo/psutil
     try:
         import psutil
-        return psutil.cpu_count()   # psutil.NUM_CPUS on old versions
+        return psutil.cpu_count()  # psutil.NUM_CPUS on old versions
     except (ImportError, AttributeError):
         pass
 
@@ -239,8 +244,8 @@ def available_cpu_count():
     try:
         pseudo_devices = os.listdir('/devices/pseudo/')
         res = 0
-        for pd in pseudo_devices:
-            if re.match(r'^cpuid@[0-9]+$', pd):
+        for psd in pseudo_devices:
+            if re.match(r'^cpuid@[0-9]+$', psd):
                 res += 1
 
         if res > 0:

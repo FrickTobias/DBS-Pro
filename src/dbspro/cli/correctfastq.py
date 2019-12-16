@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 def main(args):
-
     logger.info(f"Starting analysis")
     logger.info(f"Processing file: {args.err_corr}")
 
@@ -40,7 +39,7 @@ def main(args):
 
     counter = Counter()
     with dnaio.open(args.raw_fastq, mode="r", fileformat="fastq") as reader, \
-         dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as openout:
+            dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as openout:
         for read in tqdm(reader):
 
             counter['tot_reads'] += 1

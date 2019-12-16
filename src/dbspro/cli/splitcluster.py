@@ -2,10 +2,8 @@
 Split ABC file based on DBS cluster and cluster UMIs for each partion using UMI-tools.
 """
 import dnaio
-import argparse
 from umi_tools import UMIClusterer
 from collections import Counter, defaultdict
-import sys
 import time
 import logging
 
@@ -108,7 +106,7 @@ def main(args):
 
     time_end = time.time()
     logger.info(f"Time for clustering: {time_end - time_assign} s")
-    logger.info(f"Total time to run: {time_end-time_start} s")
+    logger.info(f"Total time to run: {time_end - time_start} s")
 
     # Send stats to log
     logger.info(f"Reads filtered out: {stats['Reads filtered out']:,}")

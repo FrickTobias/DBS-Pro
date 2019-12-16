@@ -6,7 +6,6 @@ ABC umi and read counts for each DBS. Also output some statistics.
 import logging
 import pandas as pd
 import dnaio
-import copy
 from collections import defaultdict
 from tqdm import tqdm
 import os
@@ -124,7 +123,7 @@ def n50_counter(input_list):
     :return: N50 (same type as elements of list)
     """
     input_list.sort()
-    half_tot = sum(input_list)/2
+    half_tot = sum(input_list) / 2
 
     current_count = 0
     for num in input_list:

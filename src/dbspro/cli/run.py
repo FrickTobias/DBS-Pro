@@ -2,7 +2,6 @@
 Run DPS-Pro pipeline
 """
 import logging
-import os
 import sys
 import pkg_resources
 from snakemake import snakemake
@@ -42,4 +41,3 @@ def add_arguments(parser):
     parser.add_argument("-j", "--cores", "--jobs", metavar="<JOBS>", type=int, default=available_cpu_count(),
                         help="Maximum number of cores to run in parallel. DEFAULT: Use as many as available.")
     parser.add_argument("--dir", help="Path to analysis directory. DEFAULT: CWD")
-
