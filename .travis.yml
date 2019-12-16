@@ -1,4 +1,4 @@
-language: python
+language: generic
 
 dist: xenial
 
@@ -24,7 +24,7 @@ install:
   - conda env create -n testenv -f environment.${TRAVIS_OS_NAME}.lock.yml
   - conda activate testenv
   - conda install pytest
-  - pip install .
+  - pip install --no-deps .
 
 script:
   - tests/run.sh
