@@ -19,3 +19,4 @@ dependencies:
   - importlib_resources
   - snakemake-minimal
   - umi_tools
+  - ruamel.yaml

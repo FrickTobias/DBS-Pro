@@ -1,12 +1,13 @@
 import pandas as pd
 import dnaio
 import os
+from pathlib import Path
 
 from dbspro.utils import get_abcs
 
 # Read sample and handles files.
-abc = get_abcs("ABC-sequences.fasta")
 configfile: "dbspro.yaml"
+abc = get_abcs("ABC-sequences.fasta")
 
 # Get required values
 abc_len = list(map(len, abc['Sequence']))[0] - 1    # Assumes same length, remove one as anchored sequences

@@ -20,7 +20,7 @@ ACCEPTED_FILE_EXT = ".fastq.gz"
 def add_arguments(parser):
     parser.add_argument("reads", type=Path, help="Read file (.fastq.gz)")
     parser.add_argument("directory", type=Path, help="New analysis directory to create")
-    parser.add_argument("--abc", default=pkg_resources.resource_filename("dbspro", "ABC-sequences.fasta"), type=str,
+    parser.add_argument("--abc", default=pkg_resources.resource_filename("dbspro", "ABC-sequences.fasta"), type=Path,
                         metavar="ABC-sequences.fasta",
                         help="Antibody barcode (ABC) sequence fasta file")
 
@@ -31,8 +31,7 @@ def main(args):
     init(args.directory, args.reads, args.abc)
 
 
-
-def init(directory: Path, reads: Path, abc: str):
+def init(directory: Path, reads: Path, abc: Path):
     if " " in str(directory):
         logger.error("The name of the analysis directory must not contain spaces")
         sys.exit(1)
@@ -48,7 +47,7 @@ def init(directory: Path, reads: Path, abc: str):
     )
 
 
-def create_and_populate_analysis_directory(directory: Path, reads: Path, abc: str):
+def create_and_populate_analysis_directory(directory: Path, reads: Path, abc_file: Path):
     try:
         directory.mkdir()
     except OSError as e:
@@ -63,7 +62,7 @@ def create_and_populate_analysis_directory(directory: Path, reads: Path, abc: st
     # Write ABC fasta file with ^ prior to sequence (used in cutadapt command)
     filename_as_string = str(directory) + "/" + ABC_FILE_NAME
     with dnaio.open(filename_as_string, mode='w', fileformat="fasta") as open_out, \
-            dnaio.open(abc, mode='r', fileformat="fasta") as open_in:
+            dnaio.open(abc_file, mode='r', fileformat="fasta") as open_in:
         for abc in open_in:
             if not abc.sequence.startswith("^"):
                 abc.sequence = "^" + abc.sequence
