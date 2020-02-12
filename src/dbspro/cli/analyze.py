@@ -6,9 +6,11 @@ ABC umi and read counts for each DBS. Also output some statistics.
 import logging
 import pandas as pd
 import dnaio
-from collections import defaultdict
+from collections import defaultdict, Counter
 from tqdm import tqdm
 import os
+
+from dbspro.utils import print_stats
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +19,7 @@ def main(args):
     # Barcode processing
     logger.info(f"Starting analysis")
     logger.info(f"Saving DBS information to RAM")
+    summary = Counter()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
     abc_names = {file_name: os.path.basename(file_name).split('-')[0] for file_name in args.umi_abc}
@@ -30,7 +33,6 @@ def main(args):
     # Counting UMI:s found in the different ABC:s for all barcodes.
     logger.info(f"Calculating stats")
     result_dict = dict()
-    umi_without_proper_bc = int()
     for current_abc in args.umi_abc:
         logger.info(f"Reading file: {current_abc}")
 
@@ -42,7 +44,7 @@ def main(args):
                 try:
                     bc = bc_dict[read.name]
                 except KeyError:
-                    umi_without_proper_bc += 1
+                    summary["UMIs without BC"] += 1
                     continue
 
                 # If not dbs in result dict, add it and give it a dictionary for every abc
@@ -60,8 +62,9 @@ def main(args):
     df_umis.to_csv("umi_counts.tsv", sep="\t")
     df_reads.to_csv("read_counts.tsv", sep="\t")
 
-    logger.info(f"Total DBS count: {len(result_dict):9,}")
-    logger.info(f"UMIs without BC: {umi_without_proper_bc:9,}")
+    summary["Total DBS count"] = len(result_dict)
+
+    print_stats(summary, name=__name__)
 
     # Reporting stats to terminal
     data_to_print = list()

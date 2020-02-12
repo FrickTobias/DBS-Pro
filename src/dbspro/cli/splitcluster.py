@@ -7,23 +7,22 @@ from collections import Counter, defaultdict
 import time
 import logging
 
+from dbspro.utils import print_stats
+
 logger = logging.getLogger(__name__)
 
-# Counter object for statistics.
-stats = Counter()
 
-
-def get_umis(file, length=0):
+def get_umis(file, summary, length=0):
     umis = dict()
     for read in file:
         if length == len(read.sequence):
             umis[read.name] = read.sequence
         else:
-            stats['Reads filtered out'] += 1
+            summary['Reads filtered out'] += 1
     return umis
 
 
-def assign_to_dbs(file, umis):
+def assign_to_dbs(file, umis, summary):
     """
     Create structure for storing DBS, UMI and read name
 
@@ -52,27 +51,28 @@ def assign_to_dbs(file, umis):
         except KeyError:
             dbs_umis[dbs][umi] = [read.name]
 
-        stats["Reads kept"] += 1
+        summary["Reads kept"] += 1
     return dbs_umis
 
 
 def main(args):
     logger.info(f"Filtering reads not of length {args.length} bp.")
+    summary = Counter()
 
     time_start = time.time()
 
     # Read ABC fasta with UMI sequences and save read name and sequence.
     with dnaio.open(args.abcfile, mode="r") as file:
-        umis = get_umis(file, length=args.length)
+        umis = get_umis(file, summary, length=args.length)
 
     time_filtered = time.time()
     logger.info(f"Time for filtering: {time_filtered - time_start} s")
     logger.info(f"Assigning UMIs to DBS clusters")
 
     with dnaio.open(args.dbsfile, mode="r") as file:
-        dbs_umis = assign_to_dbs(file, umis)
+        dbs_umis = assign_to_dbs(file, umis, summary)
 
-    logger.info(f"DBS clusters linked to ABC: {len(dbs_umis)}")
+    summary["DBS clusters linked to ABC"] = len(dbs_umis)
 
     time_assign = time.time()
     logger.info(f"Time for assigning clusters: {time_assign - time_filtered} s")
@@ -87,12 +87,12 @@ def main(args):
             # Encode each UMI for UMITools and perpare counts
             counts = {bytes(umi, encoding='utf-8'): len(reads) for umi, reads in umis.items()}
 
-            stats["Total UMIs"] += len(counts)
+            summary["Total UMIs"] += len(counts)
 
             # Cluster umis
             clustered_umis = clusterer(counts, threshold=args.threshold)
 
-            stats["Total clustered UMIs"] += len(clustered_umis)
+            summary["Total clustered UMIs"] += len(clustered_umis)
 
             # Loop over clusters and write reads with corrected UMI.
             for cluster in clustered_umis:
@@ -108,11 +108,7 @@ def main(args):
     logger.info(f"Time for clustering: {time_end - time_assign} s")
     logger.info(f"Total time to run: {time_end - time_start} s")
 
-    # Send stats to log
-    logger.info(f"Reads filtered out: {stats['Reads filtered out']:,}")
-    logger.info(f"Reads kept: {stats['Reads kept']}")
-    logger.info(f"Total UMIs: {stats['Total UMIs']}")
-    logger.info(f"Total clustered UMIs: {stats['Total clustered UMIs']}")
+    print_stats(summary, name=__name__)
 
 
 def add_arguments(parser):

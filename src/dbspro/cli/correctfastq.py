@@ -7,12 +7,16 @@ import dnaio
 from collections import Counter
 import os
 
+from dbspro.utils import print_stats
+
 logger = logging.getLogger(__name__)
 
 
 def main(args):
     logger.info(f"Starting analysis")
     logger.info(f"Processing file: {args.err_corr}")
+
+    summary = Counter()
 
     if os.stat(args.err_corr).st_size == 0:
         logging.warning(f"File {args.err_corr} is empty.")
@@ -37,23 +41,21 @@ def main(args):
 
     logger.info(f"Correcting sequences and writing to output file.")
 
-    counter = Counter()
     with dnaio.open(args.raw_fastq, mode="r", fileformat="fastq") as reader, \
             dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as openout:
         for read in tqdm(reader):
 
-            counter['tot_reads'] += 1
+            summary["Reads total"] += 1
             if read.sequence in err_corr:
                 read.sequence = err_corr[read.sequence]
 
                 openout.write(read)
-                counter['corr_seqs'] += 1
+                summary["Reads corrected"] += 1
             else:
-                counter['no_err_corr_seq'] += 1
+                summary["Reads without corrected sequence"] += 1
 
-    logger.info(f"Reads total: {counter['tot_reads']:,}")
-    logger.info(f"Reads corrected: {counter['corr_seqs']:,}")
-    logger.info(f"Reads without corrected seq: {counter['no_err_corr_seq']:,}")
+    print_stats(summary, name=__name__)
+
     logger.info(f"Finished")
 
 
