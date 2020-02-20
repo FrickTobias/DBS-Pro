@@ -135,7 +135,7 @@ rule error_correct:
 "Analyzes all result files"
 rule analyze:
     output:
-        counts="data.tsv",
+        data="data.tsv"
     input:
         dbs_fasta="dbs-corrected.fasta",
         abc_fastas=expand("ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
