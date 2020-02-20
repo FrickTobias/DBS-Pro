@@ -135,8 +135,7 @@ rule error_correct:
 "Analyzes all result files"
 rule analyze:
     output:
-        umi_counts="umi_counts.tsv",
-        read_counts="read_counts.tsv"
+        counts="data.tsv",
     input:
         dbs_fasta="dbs-corrected.fasta",
         abc_fastas=expand("ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
@@ -144,6 +143,7 @@ rule analyze:
     threads: 20
     shell:
         "dbspro analyze"
+        " -o {output.data}"
         " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
         " {input.abc_fastas} > {log}"
@@ -162,8 +162,7 @@ rule make_report:
           "report.html"
     input:
          nb="report.ipynb",
-         umis="umi_counts.tsv",
-         reads="read_counts.tsv"
+         data="data.tsv",
     shell:
          """
          jupyter nbconvert --execute --to notebook --inplace {input.nb}
