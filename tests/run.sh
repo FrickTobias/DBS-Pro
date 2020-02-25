@@ -11,5 +11,5 @@ pushd outdir
 
 dbspro run
 
-m=$(cut -f 1,2,4 data.tsv | sort | md5sum | cut -f 1 -d" ")
-test $m == e10ac1a02e57ee767619feb59ae32b21
+m=$(cut -f 1 data.tsv | sort | md5sum | cut -f 1 -d" ")
+test $m == 60df6163dafeb484e6f8746f168b9a74
