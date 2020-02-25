@@ -15,15 +15,12 @@ abc_umi_len = abc_len + config["UMI_len"]
 dbs = "N"*config["DBS_len"]
 
 
-# Define final targets for pipeline. Currently they are the output of rule 'analyze'
-
 rule all:
     input: 'report.html'
 
-# Cutadapt trimming
 
-"Extract DBS and trim handle between DBS and ABC."
 rule extract_dbs:
+    """Extract DBS and trim handle between DBS and ABC."""
     output:
         reads="dbs-raw.fastq.gz"
     input:
@@ -41,8 +38,8 @@ rule extract_dbs:
         " > {log}"
 
 
-"Extract ABC and UMI."
 rule extract_abc_umi:
+    """Extract ABC and UMI."""
     output:
         reads="trimmed-abc.fastq.gz"
     input:
@@ -61,10 +58,9 @@ rule extract_abc_umi:
         " {input.reads}"
         " > {log}"
 
-## ABCs
 
-"Demultiplexes ABC sequnces and trims it to give ABC-specific UMI fastq files."
 rule demultiplex_abc:
+    """Demultiplexes ABC sequnces and trims it to give ABC-specific UMI fastq files."""
     output:
         reads=touch(expand("ABCs/{name}-UMI-raw.fastq.gz", name=abc['Target']))
     input:
@@ -79,10 +75,9 @@ rule demultiplex_abc:
         " {input.reads}"
         " > {log}"
 
-# Starcode clustering
 
-"Cluster DBS sequence using starcode"
 rule dbs_cluster:
+    """Cluster DBS sequence using starcode"""
     output:
         clusters="dbs-clusters.txt"
     input:
@@ -90,16 +85,17 @@ rule dbs_cluster:
     log: "log_files/starcode-dbs-cluster.log"
     threads: 20
     shell:
-        "pigz -cd {input.reads} | starcode"
+        "pigz -cd {input.reads} |"
+        " starcode"
         " --print-clusters"
         " -t {threads}"
         " -d {config[dbs_cluster_dist]}"
         " -o {output.clusters} 2> {log}"
 
 
-"Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)"
-" a empty output file will also be created."
 rule abc_cluster:
+    """Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)
+    a empty output file will also be created."""
     output:
         reads="ABCs/{sample}-UMI-corrected.fasta"
     input:
@@ -115,10 +111,8 @@ rule abc_cluster:
         " -l {config[UMI_len]} 2> {log}"
 
 
-# DBS-Pro
-
-"Combine cluster results with original files to error correct them."
 rule error_correct:
+    """Combine cluster results with original files to error correct them."""
     output:
         reads="{corr_file}-corrected.fasta"
     input:
@@ -132,8 +126,9 @@ rule error_correct:
         " {input.clusters}"
         " {output.reads}"
 
-"Analyzes all result files"
+
 rule analyze:
+    """Analyzes all result files"""
     output:
         data="data.tsv"
     input:
