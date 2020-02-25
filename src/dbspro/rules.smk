@@ -148,24 +148,21 @@ rule analyze:
         " {input.dbs_fasta}"
         " {input.abc_fastas} > {log}"
 
-rule copy_report:
+
+rule make_report:
+    """Make jupyter notebook for final analysis"""
     output:
-        "report.ipynb"
+          html = "report.html",
+          notebook = "report.ipynb",
+    input:
+         data="data.tsv"
+    log: "log_files/make_report.log"
     run:
         import pkg_resources
         report_path = pkg_resources.resource_filename("dbspro", 'report_template.ipynb')
-        shell("jupyter nbconvert --to notebook {report_path} --output {output} --output-dir .")
-
-
-rule make_report:
-    output:
-          "report.html"
-    input:
-         nb="report.ipynb",
-         data="data.tsv",
-    shell:
-         """
-         jupyter nbconvert --execute --to notebook --inplace {input.nb}
-         jupyter nbconvert --to html {input.nb}
-         """
+        shell(
+            "jupyter nbconvert --to notebook {report_path} --output {output.notebook} --output-dir . 2> {log};"
+            " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> {log};"
+            " jupyter nbconvert --to html {output.notebook} 2> {log}"
+         )
 
