@@ -299,4 +299,3 @@ def print_stats(summary, name=None, value_width=15, print_to=sys.stderr):
         else:
             print(f"{name:<{max_name_width}} {value:>{value_width}}", file=print_to)
     print("="*width, file=print_to)
-

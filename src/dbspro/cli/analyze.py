@@ -64,7 +64,7 @@ def main(args):
     output_stats(df_filt, sorted(abc_names.values()))
 
     logger.info("Sorting data")
-    df = df.sort_values(["Barcode", "TargetName", "UMI"])
+    df = df.sort_values(["Barcode", "Target", "UMI"])
 
     logging.info(f"Writing output")
     df.to_csv(args.output, sep="\t")
@@ -87,7 +87,7 @@ def output_stats(df_filt, abcs):
     data_to_print = list()
     for abc in abcs:
         logger.info(f"Adding data for {abc}")
-        data = df_filt[df_filt.TargetName.eq(abc)].groupby("Barcode")
+        data = df_filt[df_filt.Target.eq(abc)].groupby("Barcode")
         umis = data.count()["UMI"].tolist()
         reads = data.sum()["ReadCount"].tolist()
 
@@ -132,7 +132,7 @@ def make_dataframes(results, limit):
             for umi, read_count in umis.items():
                 line = {
                     "Barcode": bc,
-                    "TargetName": abc,
+                    "Target": abc,
                     "UMI": umi,
                     "ReadCount": read_count
                 }
@@ -141,9 +141,9 @@ def make_dataframes(results, limit):
                     output_filt.append(line)
 
     # Create dataframe with barcode as index and columns with ABC data.
-    cols = ["Barcode", "TargetName", "UMI", "ReadCount"]
+    cols = ["Barcode", "Target", "UMI", "ReadCount"]
     return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True), \
-           pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
+        pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
 
 
 def add_arguments(parser):
