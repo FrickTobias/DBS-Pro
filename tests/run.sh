@@ -11,5 +11,5 @@ pushd outdir
 
 dbspro run
 
-m=$(cat umi_counts.tsv | sort | md5sum | cut -f 1 -d" ")
-test $m == 3055459d0b4a38c070593438f50d442b
+m=$(cut -f 1 data.tsv | sort | md5sum | cut -f 1 -d" ")
+test $m == 60df6163dafeb484e6f8746f168b9a74

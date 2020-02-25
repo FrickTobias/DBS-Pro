@@ -1,6 +1,10 @@
 """
-Analyzes demultiplexed and error corrected data and output data files umi_count.tsv and read_count.tsv with
-ABC umi and read counts for each DBS. Also output some statistics.
+Combines demultiplexed and error corrected FASTA file and output a aggregated TSV file on the format:
+
+    Barcode TargetName  UMI ReadCount
+
+Output statistics based on filter.
+
 """
 
 import logging
@@ -9,6 +13,7 @@ import dnaio
 from collections import defaultdict, Counter
 from tqdm import tqdm
 import os
+import sys
 
 from dbspro.utils import print_stats
 
@@ -18,22 +23,19 @@ logger = logging.getLogger(__name__)
 def main(args):
     # Barcode processing
     logger.info(f"Starting analysis")
-    logger.info(f"Saving DBS information to RAM")
     summary = Counter()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    abc_names = {file_name: os.path.basename(file_name).split('-')[0] for file_name in args.umi_abc}
+    abc_names = {file_name: os.path.basename(file_name).split('-')[0] for file_name in args.targets}
 
-    bc_dict = dict()
-    with dnaio.open(args.dbs, mode="r", fileformat="fasta") as reader:
-        for read in tqdm(reader):
-            bc_dict[read.name] = read.sequence
+    logger.info(f"Saving DBS information to RAM")
+    bc_dict = get_dbs_headers(args.dbs)
     logger.info(f"Finished processing DBS sequences")
 
     # Counting UMI:s found in the different ABC:s for all barcodes.
     logger.info(f"Calculating stats")
-    result_dict = dict()
-    for current_abc in args.umi_abc:
+    results = dict()
+    for current_abc in args.targets:
         logger.info(f"Reading file: {current_abc}")
 
         with dnaio.open(current_abc, mode="r", fileformat="fasta") as reader:
@@ -48,75 +50,60 @@ def main(args):
                     continue
 
                 # If not dbs in result dict, add it and give it a dictionary for every abc
-                if bc not in result_dict:
-                    result_dict[bc] = {abc_names[abc]: defaultdict(int) for abc in args.umi_abc}
+                if bc not in results:
+                    results[bc] = {abc: defaultdict(int) for abc in abc_names.values()}
 
-                result_dict[bc][abc_names[current_abc]][read.sequence] += 1
+                results[bc][abc_names[current_abc]][read.sequence] += 1
 
         logger.info(f"Finished reading file: {current_abc}")
 
-    # Barcode-globbing umi/read counter for all ABC:s
-    df_umis, df_reads, abc_counter = make_df_from_dict(result_dict, abc_names, sum_filter=args.filter)
+    summary["Total DBS count"] = len(results)
 
-    logging.info(f"Writing output files")
-    df_umis.to_csv("umi_counts.tsv", sep="\t")
-    df_reads.to_csv("read_counts.tsv", sep="\t")
+    df, df_filt = make_dataframes(results, args.filter)
 
-    summary["Total DBS count"] = len(result_dict)
+    output_stats(df_filt, sorted(abc_names.values()))
+
+    logger.info("Sorting data")
+    df = df.sort_values(["Barcode", "Target", "UMI"])
+
+    logging.info(f"Writing output")
+    df.to_csv(args.output, sep="\t")
 
     print_stats(summary, name=__name__)
-
-    # Reporting stats to terminal
-    data_to_print = list()
-    for abc in abc_names.values():
-        data_to_print.append({
-            "ABC": abc,
-            "Total # UMI": sum(abc_counter[abc]['umis']),
-            "N50(UMI/DBS)": n50_counter(abc_counter[abc]['umis']),
-            "Total # Reads": sum(abc_counter[abc]['reads']),
-            "N50(Reads/DBS)": n50_counter(abc_counter[abc]['reads'])
-        })
-
-    print("\nRESULTS")
-    df_data = pd.DataFrame(data_to_print).set_index("ABC", drop=True)
-    print(df_data)
-    print()
 
     logger.info(f"Finished")
 
 
-def make_df_from_dict(result_dict, abc_names, sum_filter=0):
-    abc_counter = {abc: {"umis": list(), "reads": list()} for abc in abc_names.values()}
+def get_dbs_headers(file):
+    dbs = dict()
+    with dnaio.open(file, mode="r", fileformat="fasta") as reader:
+        for read in tqdm(reader):
+            dbs[read.name] = read.sequence
+    return dbs
 
-    # Output file writing and
-    output_umis = list()
-    output_reads = list()
-    for bc in iter(result_dict):
-        output_umis_line = {'BC': bc}
-        output_reads_line = output_umis_line.copy()
 
-        for abc in abc_names.values():
-            umi_count = len(result_dict[bc][abc])
-            read_count = sum(result_dict[bc][abc].values())
+def output_stats(df_filt, abcs):
+    # Perpare data for analysis
+    data_to_print = list()
+    for abc in abcs:
+        logger.info(f"Adding data for {abc}")
+        data = df_filt[df_filt.Target.eq(abc)].groupby("Barcode")
+        umis = data.count()["UMI"].tolist()
+        reads = data.sum()["ReadCount"].tolist()
 
-            output_umis_line[abc] = umi_count
-            output_reads_line[abc] = read_count
+        data_to_print.append({
+            "ABC": abc,
+            "Total # UMI": sum(umis),
+            "N50(UMI/DBS)": n50_counter(umis),
+            "Total # Reads": sum(reads),
+            "N50(Reads/DBS)": n50_counter(reads)
+        })
 
-            # Add statistics if passing filter.
-            if sum(result_dict[bc][abc].values()) >= sum_filter:
-                # Add number of UMI:s
-                abc_counter[abc]['umis'].append(umi_count)
-                # Add number of reads
-                abc_counter[abc]['reads'].append(read_count)
-
-        output_umis.append(output_umis_line)
-        output_reads.append(output_reads_line)
-
-    # Create dataframe with barcode as index and columns with ABC data.
-    df_umis = pd.DataFrame(output_umis, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
-    df_reads = pd.DataFrame(output_reads, columns=["BC"] + sorted(abc_names.values())).set_index("BC", drop=True)
-
-    return df_umis, df_reads, abc_counter
+    print("\nRESULTS")
+    cols = ["ABC", "Total # UMI", "N50(UMI/DBS)", "Total # Reads", "N50(Reads/DBS)"]
+    df_data = pd.DataFrame(data_to_print, columns=cols).set_index("ABC", drop=True)
+    print(df_data)
+    print()
 
 
 def n50_counter(input_list):
@@ -135,12 +122,39 @@ def n50_counter(input_list):
             return num
 
 
+def make_dataframes(results, limit):
+    # Generate filtered and unfiltered dataframes from data.
+    output = list()
+    output_filt = list()
+    for bc, abcs in tqdm(results.items(), desc="Parsing results"):
+        for abc, umis in abcs.items():
+            is_ok = True if sum(umis.values()) >= limit else False
+            for umi, read_count in umis.items():
+                line = {
+                    "Barcode": bc,
+                    "Target": abc,
+                    "UMI": umi,
+                    "ReadCount": read_count
+                }
+                output.append(line)
+                if is_ok:
+                    output_filt.append(line)
+
+    # Create dataframe with barcode as index and columns with ABC data.
+    cols = ["Barcode", "Target", "UMI", "ReadCount"]
+    return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True), \
+        pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
+
+
 def add_arguments(parser):
     # Arguments
-    parser.add_argument("dbs", help="Reads with only DBS seq in fastq format.")
-    parser.add_argument("umi_abc", nargs='+',
-                        help="Reads with only UMI seq (unique molecular identifier) for ABC (antibody barcode) files"
-                             " in fastq format")
-    # Options
+    parser.add_argument("dbs",
+                        help="Path to FASTA with error-corrected DBS barcode sequences.")
+    parser.add_argument("targets", nargs="+",
+                        help="Path to directory containing error-corrected target (ABC) FASTAs with UMI "
+                             "(unique molecular identifier) sequences.")
+
+    parser.add_argument("-o", "--output", default=sys.stdout, help="Output TSV. Defualt: %(default)s")
+
     parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
                                                                     "to be included in output. DEFAULT: 0")
