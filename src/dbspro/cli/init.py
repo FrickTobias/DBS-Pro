@@ -20,9 +20,9 @@ ACCEPTED_FILE_EXT = ".fastq.gz"
 def add_arguments(parser):
     parser.add_argument("reads", type=Path, help="Read file (.fastq.gz)")
     parser.add_argument("directory", type=Path, help="New analysis directory to create")
-    parser.add_argument("--abc", default=pkg_resources.resource_filename("dbspro", "ABC-sequences.fasta"), type=Path,
-                        metavar="ABC-sequences.fasta",
-                        help="Antibody barcode (ABC) sequence fasta file")
+    parser.add_argument("--abc", required=True, type=Path, metavar="ABC-sequences.fasta",
+                        help="Antibody barcode (ABC) sequence fasta file. Should contain the target name in the "
+                             "header and the ABC seqeunce for demuliplexing.")
 
     return parser
 

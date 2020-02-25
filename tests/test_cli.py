@@ -6,7 +6,7 @@ from dbspro.cli.run import run
 from dbspro.cli.config import change_config
 
 TESTDATA_READS = Path("testdata/reads-10k-DBS.fastq.gz")
-ABC_SEQUENCES = pkg_resources.resource_filename("dbspro", "ABC-sequences.fasta")
+ABC_SEQUENCES = Path("testdata/ABC-sequences.fasta")
 
 
 def test_init(tmpdir):

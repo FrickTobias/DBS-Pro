@@ -15,9 +15,9 @@ before_install:
   - conda update -q conda
   - conda config --add channels bioconda --add channels conda-forge
   - conda info -a
-  - wget https://export.uppmax.uu.se/uppstore2018173/DBS-Pro-testdata-0.2.tar.gz
-  - tar xf DBS-Pro-testdata-0.2.tar.gz
-  - ln -s DBS-Pro-testdata-0.2 testdata
+  - wget https://export.uppmax.uu.se/uppstore2018173/DBS-Pro-testdata-0.3.tar.gz
+  - tar xf DBS-Pro-testdata-0.3.tar.gz
+  - ln -s DBS-Pro-testdata-0.3 testdata
   - chmod +x tests/run.sh
 
 install:
