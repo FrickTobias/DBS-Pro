@@ -7,15 +7,12 @@ import sys
 import os
 import logging
 from ruamel.yaml import YAML
-
-# TODO: Activate this when schema file has been added
-# from snakemake.utils import validate
-# import pkg_resources
+from snakemake.utils import validate
+import pkg_resources
 
 logger = logging.getLogger(__name__)
 DEFAULT_PATH = "dbspro.yaml"
-# TODO: Activate this when schema file has been added
-# SCHEMA_FILE = "config.schema.yaml"
+SCHEMA_FILE = "config.schema.yaml"
 
 
 def main(args):
@@ -48,10 +45,9 @@ def change_config(filename, changes_set):
         else:
             logger.warning(f"KEY = {key} not in config. Config not updated with set ({key}, {value})")
 
-    # TODO: Activate this when schema file has been added
     # Confirm that configs is valid.
-    # schema_path = pkg_resources.resource_filename("dbspro", SCHEMA_FILE)
-    # validate(configs, schema_path)
+    schema_path = pkg_resources.resource_filename("dbspro", SCHEMA_FILE)
+    validate(configs, schema_path)
 
     # Write first to temporary file then overwrite filename.
     tmpfile = filename + ".tmp"
