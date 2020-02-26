@@ -2,16 +2,18 @@ import pandas as pd
 import dnaio
 import os
 from pathlib import Path
+from snakemake.utils import validate
 
 from dbspro.utils import get_abcs
 
 # Read sample and handles files.
 configfile: "dbspro.yaml"
+validate(config, "config.schema.yaml")
+
 abc = get_abcs("ABC-sequences.fasta")
 
 # Get required values
-abc_len = list(map(len, abc['Sequence']))[0] - 1    # Assumes same length, remove one as anchored sequences
-abc_umi_len = abc_len + config["UMI_len"]
+abc_len = len(abc["Sequence"][0]) - 1
 dbs = "N"*config["DBS_len"]
 
 
@@ -27,11 +29,18 @@ rule extract_dbs:
         reads="reads.fastq.gz"
     log: "log_files/cutadapt-extract-dbs.log"
     threads: 20
+    params:
+        adapter=f"{config['h1']}...{config['h2']}",
+        err_rate=config["trim_err_rate"],
+        min_len=config["DBS_len"] - config["DBS_len_span"],
+        max_len=config["DBS_len"] + config["DBS_len_span"],
     shell:
         "cutadapt"
-        " -g ^{config[h1]}...{config[h2]}"
+        " -g {params.adapter}"
         " --discard-untrimmed"
-        " -e 0.2"
+        " -e {params.err_rate}"
+        " -m {params.min_len}"
+        " -M {params.max_len}"
         " -j {threads}"
         " -o {output.reads}"
         " {input.reads}"
@@ -46,13 +55,18 @@ rule extract_abc_umi:
         reads="reads.fastq.gz"
     log: "log_files/cutadapt-extract-abc-umi.log"
     threads: 20
+    params:
+        adapter=f"^{config['h1']}{dbs}{config['h2']}...{config['h3']}",
+        err_rate=config["trim_err_rate"],
+        min_len=abc_len + config["UMI_len"] - config["ABC_UMI_len_span"],
+        max_len=abc_len + config["UMI_len"] + config["ABC_UMI_len_span"],
     shell:
         "cutadapt"
-        " -g ^{config[h1]}{dbs}{config[h2]}...{config[h3]}"
+        " -g {params.adapter}"
         " --discard-untrimmed"
-        " -e 0.2"
-        " -m {abc_umi_len}"
-        " -M {abc_umi_len}"
+        " -e {params.err_rate}"
+        " -m {params.min_len}"
+        " -M {params.max_len}"
         " -j {threads}"
         " -o {output.reads}"
         " {input.reads}"
@@ -66,11 +80,14 @@ rule demultiplex_abc:
     input:
         reads="trimmed-abc.fastq.gz"
     log: "log_files/cutadapt-id-abc.log"
+    params:
+        file=config["abc_file"],
+        err_rate=config["demultiplex_err_rate"]
     shell:
         "cutadapt"
-        " -g file:ABC-sequences.fasta"
+        " -g file:{params.file}"
         " --no-indels"
-        " -e 0.2"
+        " -e {params.err_rate}"
         " -o ABCs/{{name}}-UMI-raw.fastq.gz"
         " {input.reads}"
         " > {log}"
@@ -97,11 +114,11 @@ rule abc_cluster:
     """Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)
     a empty output file will also be created."""
     output:
-        reads="ABCs/{sample}-UMI-corrected.fasta"
+        reads="ABCs/{target}-UMI-corrected.fasta"
     input:
-        abc_reads="ABCs/{sample}-UMI-raw.fastq.gz",
+        abc_reads="ABCs/{target}-UMI-raw.fastq.gz",
         dbs_corrected="dbs-corrected.fasta"
-    log: "ABCs/log_files/splitcluster-{sample}.log"
+    log: "log_files/splitcluster-{target}.log"
     shell:
         "dbspro splitcluster"
         " {input.dbs_corrected}"
@@ -114,17 +131,17 @@ rule abc_cluster:
 rule error_correct:
     """Combine cluster results with original files to error correct them."""
     output:
-        reads="{corr_file}-corrected.fasta"
+        reads="{file}-corrected.fasta"
     input:
-        reads="{corr_file}-raw.fastq.gz",
-        clusters="{corr_file}-clusters.txt"
-    log: "log_files/error-correct-{corr_file}.log"
+        reads="{file}-raw.fastq.gz",
+        clusters="{file}-clusters.txt"
+    log: "log_files/correctfastq-{file}.log"
     threads: 20
     shell:
         "dbspro correctfastq"
         " {input.reads}"
         " {input.clusters}"
-        " {output.reads}"
+        " {output.reads} 2> {log}"
 
 
 rule analyze:
@@ -141,7 +158,7 @@ rule analyze:
         " -o {output.data}"
         " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
-        " {input.abc_fastas} > {log}"
+        " {input.abc_fastas} &> {log}"
 
 
 rule make_report:

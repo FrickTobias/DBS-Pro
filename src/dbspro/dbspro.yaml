@@ -1,24 +1,26 @@
 ############
-# Settings #
+# Trimming #
 ############
-DBS_len: 20 # Length of barcode sequence
-UMI_len: 6
+DBS_len: 20 # Length in basepairs of barcode sequence
+DBS_len_span: 1 # Span (+/-) relative DBS_len for accepted DBS i.e for 1 the span is DBS_len-1 to DBS_len+1 bp.
+UMI_len: 6 # Length in basepairs of UMI sequence
+ABC_UMI_len_span: 0 # Span (+/-) relative the sum of the ABC and UMI lengths
+trim_err_rate: 0.2 # Error rate for handle trimming.
 
-##############
-# File names #
-##############
-abc_file: "ABC-sequences.fasta"
-
-####################
-# Handle sequences #
-####################
+# Handels
 h1: CGATGCTAATCAGATCA # h1 adaptor sequence, appears before droplet barcode
 h2: AAGAGTCAATAGACCATCTAACAGGATTCAGGTA # h2 adaptor sequence, appears after droplet barcode
 h3: TTATATCACGACAAGAG # h3 adaptor sequence, appears after Ab-barcode and UMI
+
+##################
+# Demultiplexing #
+##################
+abc_file: "ABC-sequences.fasta"  # Fasta file containing target information.
+demultiplex_err_rate: 0.2 # Error rate for demultiplexing ABC sequences..
 
 ####################
 # Pipeline configs #
 ####################
 dbs_cluster_dist: 2 # Maximum edit distance to cluster DBS sequences in Starcode.
 abc_cluster_dist: 1 # Maximum edit distance to cluster ABC sequences in Starcode.
-filter_reads: 4 # Minimum reads required for an ABC to be included in analysis output.
+filter_reads: 1 # Minimum reads required for an ABC to be included in analysis output.

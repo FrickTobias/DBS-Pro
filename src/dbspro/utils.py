@@ -23,9 +23,14 @@ def get_abcs(abc_fasta_file):
         abc = abc.set_index("Target", drop=False)
 
     # Loop over sequences and confirm that they are anchored for cutadapt
+    length = None
     for i, row in abc.iterrows():
         assert row['Sequence'].startswith('^'), f"Sequnences in {abc_fasta_file} need to be anchored. " \
                                                 f"Add '^' to the start of all ABC sequences."
+        if not length:
+            length = len(row['Sequence'])
+        else:
+            assert length == len(row['Sequence']), f"Sequnences in {abc_fasta_file} need of same length. "
 
     return abc
 
