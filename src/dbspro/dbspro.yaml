@@ -1,10 +1,10 @@
 ############
 # Trimming #
 ############
-DBS_len: 20 # Length in basepairs of barcode sequence
-DBS_len_span: 1 # Span (+/-) relative DBS_len for accepted DBS i.e for 1 the span is DBS_len-1 to DBS_len+1 bp.
-UMI_len: 6 # Length in basepairs of UMI sequence
-ABC_UMI_len_span: 0 # Span (+/-) relative the sum of the ABC and UMI lengths
+dbs_len: 20 # Length in basepairs of barcode sequence
+dbs_len_span: 1 # Span (+/-) relative DBS_len for accepted DBS i.e for 1 the span is DBS_len-1 to DBS_len+1 bp.
+umi_len: 6 # Length in basepairs of UMI sequence
+abc_umi_len_span: 0 # Span (+/-) relative the sum of the ABC and UMI lengths
 trim_err_rate: 0.2 # Error rate for handle trimming.
 
 # Handels

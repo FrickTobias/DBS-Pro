@@ -14,7 +14,7 @@ abc = get_abcs("ABC-sequences.fasta")
 
 # Get required values
 abc_len = len(abc["Sequence"][0]) - 1
-dbs = "N"*config["DBS_len"]
+dbs = "N"*config["dbs_len"]
 
 
 rule all:
@@ -32,8 +32,8 @@ rule extract_dbs:
     params:
         adapter=f"{config['h1']}...{config['h2']}",
         err_rate=config["trim_err_rate"],
-        min_len=config["DBS_len"] - config["DBS_len_span"],
-        max_len=config["DBS_len"] + config["DBS_len_span"],
+        min_len=config["dbs_len"] - config["dbs_len_span"],
+        max_len=config["dbs_len"] + config["dbs_len_span"],
     shell:
         "cutadapt"
         " -g {params.adapter}"
@@ -58,8 +58,8 @@ rule extract_abc_umi:
     params:
         adapter=f"^{config['h1']}{dbs}{config['h2']}...{config['h3']}",
         err_rate=config["trim_err_rate"],
-        min_len=abc_len + config["UMI_len"] - config["ABC_UMI_len_span"],
-        max_len=abc_len + config["UMI_len"] + config["ABC_UMI_len_span"],
+        min_len=abc_len + config["umi_len"] - config["abc_umi_len_span"],
+        max_len=abc_len + config["umi_len"] + config["abc_umi_len_span"],
     shell:
         "cutadapt"
         " -g {params.adapter}"
@@ -125,7 +125,7 @@ rule abc_cluster:
         " {input.abc_reads}"
         " -o {output.reads}"
         " -t {config[abc_cluster_dist]}"
-        " -l {config[UMI_len]} 2> {log}"
+        " -l {config[umi_len]} 2> {log}"
 
 
 rule error_correct:

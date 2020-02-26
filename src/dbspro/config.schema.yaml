@@ -1,16 +1,16 @@
 $schema: "http://json-schema.org/draft-06/schema#"
 description: Configuration parameters for running BLR pipeline
 properties:
-  DBS_len:
+  dbs_len:
     type: number
     description: Length in basepairs of barcode sequence
-  DBS_len_span:
+  dbs_len_span:
     type: number
     description: Span (+/-) relative DBS_len for accepted DBS i.e for 1 the span is DBS_len-1 to DBS_len+1 bp.
-  UMI_len:
+  umi_len:
     type: number
     description: Length in basepairs of UMI sequence
-  ABC_UMI_len_span:
+  abc_umi_len_span:
     type: number
     description: Span (+/-) relative the sum of the ABC and UMI lengths
   trim_err_rate:
