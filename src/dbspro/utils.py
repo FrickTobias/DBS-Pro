@@ -287,7 +287,7 @@ def print_stats(summary, name=None, value_width=15, print_to=sys.stderr):
     :param print_to: Where to direct output
     """
     # Get widths for formatting
-    max_name_width = max(map(len, summary.keys()))
+    max_name_width = max(map(len, summary.keys())) + 1
     width = value_width + max_name_width + 1
 
     # Header
@@ -297,6 +297,7 @@ def print_stats(summary, name=None, value_width=15, print_to=sys.stderr):
 
     # Print stats in columns
     for name, value in summary.items():
+        name += ":"
         if type(value) is int:
             print(f"{name:<{max_name_width}} {value:>{value_width},}", file=print_to)
         elif type(value) is float:

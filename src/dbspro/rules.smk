@@ -178,3 +178,11 @@ rule make_report:
             " jupyter nbconvert --to html {output.notebook} 2> {log}"
          )
 
+rule make_summary:
+    output: "summary_metrics.tsv"
+    input: "data.tsv"
+    log: "log_files/summary_metrics.log"
+    shell:
+        "dbspro summary"
+        " -d ."
+        " -o {output} > {log}"
