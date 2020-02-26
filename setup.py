@@ -16,7 +16,8 @@ setup(
     extras_require={
         "dev": ["flake8"],
     },
-    package_data={"dbspro": ["rules.smk", "report_template.ipynb", "dbspro.yaml", "ABC-sequences.fasta"]},
+    package_data={"dbspro": ["rules.smk", "report_template.ipynb", "dbspro.yaml", "config.schema.yaml",
+                             "ABC-sequences.fasta"]},
     packages=find_namespace_packages("src"),
     entry_points={"console_scripts": ["dbspro = dbspro.__main__:main"]},
     classifiers=[
