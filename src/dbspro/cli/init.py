@@ -8,7 +8,6 @@ import sys
 import dnaio
 from pathlib import Path
 from importlib_resources import read_binary
-import pkg_resources
 
 logger = logging.getLogger(__name__)
 

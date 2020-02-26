@@ -1,5 +1,4 @@
 from pathlib import Path
-import pkg_resources
 
 from dbspro.cli.init import init
 from dbspro.cli.run import run
