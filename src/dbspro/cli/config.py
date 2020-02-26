@@ -79,12 +79,7 @@ def change_config(filename, changes_set):
 
     # Update configs
     for key, value in changes_set:
-        if key in configs:
-            value = YAML(typ='safe').load(value)
-            logger.info(f"Changing value of '{key}': {configs[key]} --> {value}.")
-            configs[key] = value
-        else:
-            logger.warning(f"KEY = {key} not in config. Config not updated with set ({key}, {value})")
+        update_configs(configs, key, value)
 
     # Confirm that configs is valid.
     schema_path = pkg_resources.resource_filename("dbspro", SCHEMA_FILE)
@@ -95,6 +90,33 @@ def change_config(filename, changes_set):
     with open(tmpfile, "w") as file:
         yaml.dump(configs, stream=file)
     os.rename(tmpfile, filename)
+
+
+def update_configs(configs, key, value):
+    """
+    Check key and value before updating configs
+    """
+    key = key.lower()
+
+    if key not in configs:
+        logger.warning(f"KEY = {key} not in config. Config not updated with set ({key}, {value})")
+        return
+
+    if key in SEQUENCE_KEYS:
+        if not _is_sequence(value):
+            logger.warning(f"Value for key {key} must be a nucleotide sequence. Skipping set.")
+            return
+        else:
+            value = value.upper()
+
+    value = YAML(typ='safe').load(value)
+    logger.info(f"Changing value of '{key}': {configs[key]} --> {value}.")
+    configs[key] = value
+
+
+def _is_sequence(value):
+    nucleotides = {"A", "T", "C", "G", "N"}
+    return all(char in nucleotides for char in value.upper())
 
 
 def load_yaml(filename):
