@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 CONFIG_FILE = "dbspro.yaml"
 
+# TODO add ability to collect data from allready present summary.tsv files in multisample mode.
+
 
 def main(args):
 
@@ -295,7 +297,7 @@ def parse_dbspro(path, summary, sample=None):
 
 
 def add_arguments(parser):
-    parser.add_argument("-o", "--output", default="-", help="Output TSV file name. Default: write to stdout.")
+    parser.add_argument("-o", "--output", default="summary.tsv", help="Output TSV file name. Default: %(default)s.")
     parser.add_argument("-d", "--directory", type=Path, default=".",
                         help="Path to directory where to search for log files. Default is current directory "
                              "(%(deafult)s). ")

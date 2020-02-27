@@ -30,7 +30,7 @@ rule extract_dbs:
     log: "log_files/cutadapt-extract-dbs.log"
     threads: 20
     params:
-        adapter=f"{config['h1']}...{config['h2']}",
+        adapter=f"^{config['h1']}...{config['h2']}",
         err_rate=config["trim_err_rate"],
         min_len=config["dbs_len"] - config["dbs_len_span"],
         max_len=config["dbs_len"] + config["dbs_len_span"],
