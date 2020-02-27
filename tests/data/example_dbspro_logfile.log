@@ -1,0 +1,15 @@
+2020-02-26 16:47:21 - splitcluster - INFO: Filtering reads not of length 6 bp.
+2020-02-26 16:47:21 - splitcluster - INFO: Time for filtering: 0.1918628215789795 s
+2020-02-26 16:47:21 - splitcluster - INFO: Assigning UMIs to DBS clusters
+2020-02-26 16:47:22 - splitcluster - INFO: Time for assigning clusters: 0.6311731338500977 s
+2020-02-26 16:47:22 - splitcluster - INFO: Starting clustering of UMIs within clusters.
+2020-02-26 16:47:23 - splitcluster - INFO: Time for clustering: 1.0412039756774902 s
+2020-02-26 16:47:23 - splitcluster - INFO: Total time to run: 1.8642399311065674 s
+===========================================
+STATS SUMMARY - dbspro.cli.splitcluster
+-------------------------------------------
+Reads kept:                           9,592
+DBS clusters linked to ABC:           2,932
+Total UMIs:                           3,312
+Total clustered UMIs:                 5,478
+===========================================
