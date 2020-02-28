@@ -92,7 +92,7 @@ def main(args):
 
         in_workdir = False
 
-    print_stats(summary.counts)
+    print_stats(summary.counts, name=__name__)
 
     summary.write(args.output, multisample=multisample)
 
