@@ -18,7 +18,7 @@ dbs = "N"*config["dbs_len"]
 
 
 rule all:
-    input: 'report.html'
+    input: 'report.html', "summary_metrics.tsv"
 
 
 rule extract_dbs:
@@ -107,7 +107,8 @@ rule dbs_cluster:
         " --print-clusters"
         " -t {threads}"
         " -d {config[dbs_cluster_dist]}"
-        " -o {output.clusters} 2> {log}"
+        " -o {output.clusters}"
+        " 2> >(tee {log} >&2)"
 
 
 rule abc_cluster:
@@ -125,7 +126,8 @@ rule abc_cluster:
         " {input.abc_reads}"
         " -o {output.reads}"
         " -t {config[abc_cluster_dist]}"
-        " -l {config[umi_len]} 2> {log}"
+        " -l {config[umi_len]}"
+        " 2> {log}"
 
 
 rule error_correct:
@@ -136,12 +138,12 @@ rule error_correct:
         reads="{file}-raw.fastq.gz",
         clusters="{file}-clusters.txt"
     log: "log_files/correctfastq-{file}.log"
-    threads: 20
     shell:
         "dbspro correctfastq"
         " {input.reads}"
         " {input.clusters}"
-        " {output.reads} 2> {log}"
+        " {output.reads}"
+        " 2> {log}"
 
 
 rule analyze:
@@ -152,13 +154,13 @@ rule analyze:
         dbs_fasta="dbs-corrected.fasta",
         abc_fastas=expand("ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
     log: "log_files/analyze.log"
-    threads: 20
     shell:
         "dbspro analyze"
         " -o {output.data}"
         " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
-        " {input.abc_fastas} &> {log}"
+        " {input.abc_fastas}"
+        " 2> >(tee {log} >&2)"
 
 
 rule make_report:
@@ -173,9 +175,9 @@ rule make_report:
         import pkg_resources
         report_path = pkg_resources.resource_filename("dbspro", 'report_template.ipynb')
         shell(
-            "jupyter nbconvert --to notebook {report_path} --output {output.notebook} --output-dir . 2> {log};"
-            " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> {log};"
-            " jupyter nbconvert --to html {output.notebook} 2> {log}"
+            "jupyter nbconvert --to notebook {report_path} --output {output.notebook} --output-dir . 2>> >(tee {log} >&2);"
+            " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> >(tee {log} >&2);"
+            " jupyter nbconvert --to html {output.notebook} 2>> >(tee {log} >&2)"
          )
 
 rule make_summary:
@@ -185,4 +187,5 @@ rule make_summary:
     shell:
         "dbspro summary"
         " -d ."
-        " -o {output} > {log}"
+        " -o {output}"
+        " 2> >(tee {log} >&2)"
