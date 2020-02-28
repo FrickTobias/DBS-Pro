@@ -132,7 +132,7 @@ class Summary:
             self.counts["Nr parameters"] += 1
             self.counts["Nr values"] += 1
 
-    def write(self, output_file, multisample=False, sep="\t"):
+    def write(self, output_file, multisample=False, sep=","):
         """Write summary results to output_file"""
         if multisample:
             self._write_multi(output_file, sep=sep)
@@ -297,7 +297,7 @@ def parse_dbspro(path, summary, sample=None):
 
 
 def add_arguments(parser):
-    parser.add_argument("-o", "--output", default="summary.tsv", help="Output TSV file name. Default: %(default)s.")
+    parser.add_argument("-o", "--output", default="summary_metrics.csv", help="Output CSV file name. Default: %(default)s.")
     parser.add_argument("-d", "--directory", type=Path, default=".",
                         help="Path to directory where to search for log files. Default is current directory "
                              "(%(deafult)s). ")

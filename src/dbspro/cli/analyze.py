@@ -40,7 +40,7 @@ def main(args):
 
         with dnaio.open(current_abc, mode="r", fileformat="fasta") as reader:
             # Loop over reads in file, where read.seq = umi
-            for read in tqdm(reader):
+            for read in tqdm(reader, desc=f"Parsing {abc_names[current_abc]} reads"):
 
                 # Try find UMI
                 try:
@@ -77,7 +77,7 @@ def main(args):
 def get_dbs_headers(file):
     dbs = dict()
     with dnaio.open(file, mode="r", fileformat="fasta") as reader:
-        for read in tqdm(reader):
+        for read in tqdm(reader, desc="Parsing DBS reads"):
             dbs[read.name] = read.sequence
     return dbs
 

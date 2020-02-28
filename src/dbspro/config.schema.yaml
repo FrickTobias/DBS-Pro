@@ -26,7 +26,7 @@ properties:
     default: "ABC-sequences.fasta"
     description: Fasta file containing target information.
   h1:
-    type: string
+    type: ["string", "null"]
     description: h1 adaptor sequence, appears before droplet barcode
   h2:
     type: string

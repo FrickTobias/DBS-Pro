@@ -18,7 +18,15 @@ dbs = "N"*config["dbs_len"]
 
 
 rule all:
-    input: 'report.html', "summary_metrics.tsv"
+    input: 'report.html', "summary_metrics.csv"
+
+
+if config["h1"] is None: # For PBA input
+    dbs_trim = f"-a {config['h2']}"
+    abs_umi_adapter = f"^{dbs}{config['h2']}...{config['h3']}"
+else: # For DBS-Pro input
+    dbs_trim = f"-g ^{config['h1']}...{config['h2']}"
+    abs_umi_adapter = f"^{config['h1']}{dbs}{config['h2']}...{config['h3']}"
 
 
 rule extract_dbs:
@@ -30,13 +38,13 @@ rule extract_dbs:
     log: "log_files/cutadapt-extract-dbs.log"
     threads: 20
     params:
-        adapter=f"^{config['h1']}...{config['h2']}",
+        trim=dbs_trim,
         err_rate=config["trim_err_rate"],
         min_len=config["dbs_len"] - config["dbs_len_span"],
         max_len=config["dbs_len"] + config["dbs_len_span"],
     shell:
         "cutadapt"
-        " -g {params.adapter}"
+        " {params.trim}"
         " --discard-untrimmed"
         " -e {params.err_rate}"
         " -m {params.min_len}"
@@ -56,7 +64,7 @@ rule extract_abc_umi:
     log: "log_files/cutadapt-extract-abc-umi.log"
     threads: 20
     params:
-        adapter=f"^{config['h1']}{dbs}{config['h2']}...{config['h3']}",
+        adapter=abs_umi_adapter,
         err_rate=config["trim_err_rate"],
         min_len=abc_len + config["umi_len"] - config["abc_umi_len_span"],
         max_len=abc_len + config["umi_len"] + config["abc_umi_len_span"],
@@ -127,7 +135,7 @@ rule abc_cluster:
         " -o {output.reads}"
         " -t {config[abc_cluster_dist]}"
         " -l {config[umi_len]}"
-        " 2> {log}"
+        " > {log}"
 
 
 rule error_correct:
@@ -143,7 +151,7 @@ rule error_correct:
         " {input.reads}"
         " {input.clusters}"
         " {output.reads}"
-        " 2> {log}"
+        " > {log}"
 
 
 rule analyze:
@@ -160,7 +168,7 @@ rule analyze:
         " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
         " {input.abc_fastas}"
-        " 2> >(tee {log} >&2)"
+        " > {log}"
 
 
 rule make_report:
@@ -181,11 +189,11 @@ rule make_report:
          )
 
 rule make_summary:
-    output: "summary_metrics.tsv"
+    output: "summary_metrics.csv"
     input: "data.tsv"
     log: "log_files/summary_metrics.log"
     shell:
         "dbspro summary"
         " -d ."
         " -o {output}"
-        " 2> >(tee {log} >&2)"
+        " > {log}"

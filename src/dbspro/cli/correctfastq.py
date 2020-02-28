@@ -46,7 +46,7 @@ def main(args):
 
     with dnaio.open(args.raw_fastq, mode="r", fileformat="fastq") as reader, \
             dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as writer:
-        for read in tqdm(reader):
+        for read in tqdm(reader, desc="Parsing reads"):
 
             summary["Reads total"] += 1
             if read.sequence in err_corr:

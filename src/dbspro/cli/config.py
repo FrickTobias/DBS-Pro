@@ -14,7 +14,6 @@ from dbspro.utils import get_abcs
 logger = logging.getLogger(__name__)
 DEFAULT_PATH = "dbspro.yaml"
 SCHEMA_FILE = "config.schema.yaml"
-SEQUENCE_KEYS = {"h1", "h2", "h3"}
 
 
 def main(args):
@@ -44,7 +43,7 @@ def print_construct(file):
     h2 = Handle("H2", configs["h2"])
     umi = Handle("UMI", "N"*configs["umi_len"])
     abcs = get_abcs(configs["abc_file"])
-    abc = Handle("ABC", "X"*len(abcs["Sequence"][0]))
+    abc = Handle("ABC", "X"*len(abcs["Sequence"][0].strip("^")))
     h3 = Handle("H3", configs["h3"])
 
     handles = [h1, dbs, h2, abc, umi, h3]
@@ -102,21 +101,9 @@ def update_configs(configs, key, value):
         logger.warning(f"KEY = {key} not in config. Config not updated with set ({key}, {value})")
         return
 
-    if key in SEQUENCE_KEYS:
-        if not _is_sequence(value):
-            logger.warning(f"Value for key {key} must be a nucleotide sequence. Skipping set.")
-            return
-        else:
-            value = value.upper()
-
     value = YAML(typ='safe').load(value)
     logger.info(f"Changing value of '{key}': {configs[key]} --> {value}.")
     configs[key] = value
-
-
-def _is_sequence(value):
-    nucleotides = {"A", "T", "C", "G", "N"}
-    return all(char in nucleotides for char in value.upper())
 
 
 def load_yaml(filename):

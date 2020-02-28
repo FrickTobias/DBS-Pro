@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 def main() -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(module)s - %(levelname)s: %(message)s",
-                        datefmt='%Y-%m-%d %H:%M:%S')
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        stream=sys.stdout)
     parser = ArgumentParser(description=__doc__, prog="dbspro")
     parser.add_argument("--version", action="version", version="%(prog)s 0.1")
     subparsers = parser.add_subparsers()
@@ -39,6 +40,12 @@ def main() -> int:
     else:
         module = args.module
         del args.module
+
+        # Print settings for module
+        sys.stdout.write(f"SETTINGS FOR: {module.__name__.split('.')[-1]}\n")
+        for object_variable, value in vars(args).items():
+            sys.stdout.write(f" {object_variable}: {value}\n")
+
         module.main(args)
 
     return 0
