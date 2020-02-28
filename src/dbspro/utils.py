@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 
 import sys
-import gzip
 import logging
 import os
 import re

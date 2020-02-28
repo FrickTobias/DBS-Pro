@@ -1,6 +1,4 @@
 from pathlib import Path
-from io import StringIO
-import pytest
 
 from dbspro.cli.init import init
 from dbspro.cli.run import run
