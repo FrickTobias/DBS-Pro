@@ -297,7 +297,8 @@ def parse_dbspro(path, summary, sample=None):
 
 
 def add_arguments(parser):
-    parser.add_argument("-o", "--output", default="summary_metrics.csv", help="Output CSV file name. Default: %(default)s.")
+    parser.add_argument("-o", "--output", default="summary_metrics.csv",
+                        help="Output CSV file name. Default: %(default)s.")
     parser.add_argument("-d", "--directory", type=Path, default=".",
                         help="Path to directory where to search for log files. Default is current directory "
                              "(%(deafult)s). ")
