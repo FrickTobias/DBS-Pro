@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(args):
-    logger.info(f"Starting analysis")
+    logger.info("Starting analysis")
     logger.info(f"Processing file: {args.err_corr}")
 
     summary = Counter()
@@ -42,7 +42,7 @@ def main(args):
     summary["Median sequences per cluster"] = statistics.median(seqs_per_cluster)
     summary["Clusters with one sequence"] = sum(1 for r in seqs_per_cluster if r == 1)
 
-    logger.info(f"Correcting sequences and writing to output file.")
+    logger.info("Correcting sequences and writing to output file.")
 
     with dnaio.open(args.raw_fastq, mode="r", fileformat="fastq") as reader, \
             dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as writer:
@@ -59,7 +59,7 @@ def main(args):
 
     print_stats(summary, name=__name__)
 
-    logger.info(f"Finished")
+    logger.info("Finished")
 
 
 def parse_starcode_file(filename):

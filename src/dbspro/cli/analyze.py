@@ -22,18 +22,18 @@ logger = logging.getLogger(__name__)
 
 def main(args):
     # Barcode processing
-    logger.info(f"Starting analysis")
+    logger.info("Starting analysis")
     summary = Counter()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
     abc_names = {file_name: os.path.basename(file_name).split('-')[0] for file_name in args.targets}
 
-    logger.info(f"Saving DBS information to RAM")
+    logger.info("Saving DBS information to RAM")
     bc_dict = get_dbs_headers(args.dbs)
-    logger.info(f"Finished processing DBS sequences")
+    logger.info("Finished processing DBS sequences")
 
     # Counting UMI:s found in the different ABC:s for all barcodes.
-    logger.info(f"Calculating stats")
+    logger.info("Calculating stats")
     results = dict()
     for current_abc in args.targets:
         logger.info(f"Reading file: {current_abc}")
@@ -66,12 +66,12 @@ def main(args):
     logger.info("Sorting data")
     df = df.sort_values(["Barcode", "Target", "UMI"])
 
-    logging.info(f"Writing output")
+    logging.info("Writing output")
     df.to_csv(args.output, sep="\t")
 
     print_stats(summary, name=__name__)
 
-    logger.info(f"Finished")
+    logger.info("Finished")
 
 
 def get_dbs_headers(file):

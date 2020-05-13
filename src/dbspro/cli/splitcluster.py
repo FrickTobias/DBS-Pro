@@ -68,7 +68,7 @@ def main(args):
     with dnaio.open(args.uncorrected_umi_fastq, mode="r") as file:
         name_to_umi_seq = map_names_to_umi_seq(file, summary, length_filter=args.length)
 
-    logger.info(f"Assigning ABC reads to DBS clusters")
+    logger.info("Assigning ABC reads to DBS clusters")
 
     with dnaio.open(args.corrected_dbs_fasta, mode="r") as file:
         dbs_groups = assign_to_dbs(file, name_to_umi_seq, summary)
