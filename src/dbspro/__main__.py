@@ -42,9 +42,9 @@ def main() -> int:
         del args.module
 
         # Print settings for module
-        sys.stdout.write(f"SETTINGS FOR: {module.__name__.split('.')[-1]}\n")
+        sys.stderr.write(f"SETTINGS FOR: {module.__name__.split('.')[-1]}\n")
         for object_variable, value in vars(args).items():
-            sys.stdout.write(f" {object_variable}: {value}\n")
+            sys.stderr.write(f" {object_variable}: {value}\n")
 
         module.main(args)
 
