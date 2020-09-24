@@ -13,6 +13,15 @@ setup(
     license="MIT",
     python_requires=">=3.6",
     package_dir={"": "src"},
+    install_requires=[
+        "pysam",
+        "pandas",
+        "dnaio",
+        "tqdm",
+        "snakemake",
+        "importlib_resources; python_version<'3.7'",
+        "umi_tools",
+    ],
     extras_require={
         "dev": ["flake8"],
     },
