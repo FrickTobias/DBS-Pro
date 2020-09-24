@@ -301,4 +301,4 @@ def add_arguments(parser):
                         help="Output CSV file name. Default: %(default)s.")
     parser.add_argument("-d", "--directory", type=Path, default=".",
                         help="Path to directory where to search for log files. Default is current directory "
-                             "(%(deafult)s). ")
+                             "(%(default)s). ")
