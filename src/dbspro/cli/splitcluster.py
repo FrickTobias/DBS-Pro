@@ -20,7 +20,8 @@ def map_names_to_umi_seq(file, summary, length_filter):
             name_to_umi_sequence[read.name] = read.sequence
             summary["ABC reads filtered"] += 1
 
-    summary["ABC reads filtered (%)"] = 100 * summary["ABC reads filtered"] / summary["ABC reads total"]
+    if summary["ABC reads total"]:
+        summary["ABC reads filtered (%)"] = 100 * summary["ABC reads filtered"] / summary["ABC reads total"]
     return name_to_umi_sequence
 
 
