@@ -56,7 +56,9 @@ def assign_to_dbs(file, name_to_umi_seq, summary):
 
         summary["DBS reads matched to ABCs"] += 1
 
-    summary["DBS reads matched to ABCs (%)"] = 100 * summary["DBS reads matched to ABCs"] / summary["DBS reads"]
+    if summary["DBS reads"]:
+        summary["DBS reads matched to ABCs (%)"] = 100 * summary["DBS reads matched to ABCs"] / summary["DBS reads"]
+
     return dbs_groups
 
 
