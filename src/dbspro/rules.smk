@@ -135,7 +135,7 @@ rule abc_cluster:
         " -o {output.reads}"
         " -t {config[abc_cluster_dist]}"
         " -l {config[umi_len]}"
-        " > {log}"
+        " 2> {log}"
 
 
 rule error_correct:
@@ -151,7 +151,7 @@ rule error_correct:
         " {input.reads}"
         " {input.clusters}"
         " {output.reads}"
-        " > {log}"
+        " 2> {log}"
 
 
 rule analyze:
@@ -168,7 +168,7 @@ rule analyze:
         " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
         " {input.abc_fastas}"
-        " > {log}"
+        " 2> {log}"
 
 
 rule make_report:
@@ -196,4 +196,4 @@ rule make_summary:
         "dbspro summary"
         " -d ."
         " -o {output}"
-        " > {log}"
+        " 2> {log}"

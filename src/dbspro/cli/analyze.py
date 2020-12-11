@@ -99,11 +99,11 @@ def output_stats(df_filt, abcs):
             "N50(Reads/DBS)": n50_counter(reads)
         })
 
-    print("\nRESULTS")
+    sys.stderr.write("\nRESULTS\n")
     cols = ["ABC", "Total # UMI", "N50(UMI/DBS)", "Total # Reads", "N50(Reads/DBS)"]
     df_data = pd.DataFrame(data_to_print, columns=cols).set_index("ABC", drop=True)
-    print(df_data)
-    print()
+    sys.stderr.write(df_data.to_string())
+    sys.stderr.write("\n")
 
 
 def n50_counter(input_list):

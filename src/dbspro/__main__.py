@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 def main() -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(module)s - %(levelname)s: %(message)s",
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        stream=sys.stdout)
+                        datefmt='%Y-%m-%d %H:%M:%S')
     parser = ArgumentParser(description=__doc__, prog="dbspro")
     parser.add_argument("--version", action="version", version="%(prog)s 0.1")
     subparsers = parser.add_subparsers()

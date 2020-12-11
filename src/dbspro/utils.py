@@ -149,7 +149,7 @@ def available_cpu_count():
     raise Exception('Can not determine number of CPUs on this system')
 
 
-def print_stats(summary, name=None, value_width=15, print_to=sys.stdout):
+def print_stats(summary, name=None, value_width=15, print_to=sys.stderr):
     """
     Prints stats in nice table with two column for the key and value pairs in summary
     :param summary: collections.Coutner object
