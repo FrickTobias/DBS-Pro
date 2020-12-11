@@ -53,7 +53,15 @@ def add_arguments(parser):
 def main(args):
     targets = args.targets if args.targets else None
     try:
-        run(args.dryrun, args.cores, args.keepgoing, args.unlock, args.dag, args.filegraph, targets)
+        run(dryrun=args.dryrun,
+            cores=args.cores,
+            keepgoing=args.keepgoing,
+            unlock=args.unlock,
+            printdag=args.dag,
+            printfilegraph=args.filegraph,
+            targets=targets,
+            delete_all_output=args.delete_all_output,
+            force_run=args.force_run)
     except SnakemakeError:
         sys.exit(1)
     sys.exit(0)
