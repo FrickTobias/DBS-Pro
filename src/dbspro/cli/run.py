@@ -98,6 +98,6 @@ def run(
                         delete_all_output=delete_all_output,
                         forcerun=force_run,
                         workdir=workdir,
-                        printreason = dryrun)
+                        printreason=dryrun)
     if not success:
         raise SnakemakeError()
