@@ -10,6 +10,23 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+IUPAC_MAP = {
+    'A': {'A'},
+    'C': {'C'},
+    'G': {'G'},
+    'T': {'T'},
+    'R': {'G', 'A'},
+    'Y': {'T', 'C'},
+    'M': {'C', 'A'},
+    'K': {'G', 'T'},
+    'W': {'T', 'A'},
+    'S': {'G', 'C'},
+    'B': {'G', 'T', 'C'},
+    'D': {'G', 'T', 'A'},
+    'H': {'C', 'T', 'A'},
+    'V': {'G', 'C', 'A'},
+    'N': {'G', 'C', 'T', 'A'}}
+
 
 def get_abcs(abc_fasta_file):
     """

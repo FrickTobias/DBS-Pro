@@ -12,4 +12,4 @@ pushd outdir
 dbspro run
 
 m=$(cut -f 1 data.tsv | sort | md5sum | cut -f 1 -d" ")
-test $m == f2703c12e53b56d32d3cdaee017728e1
+test $m == 628d539fa1b3f961c1740250f6be4baa

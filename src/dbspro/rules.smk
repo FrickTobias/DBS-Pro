@@ -14,7 +14,7 @@ abc = get_abcs("ABC-sequences.fasta")
 
 # Get required values
 abc_len = len(abc["Sequence"][0]) - 1
-dbs = "N"*config["dbs_len"]
+dbs_n = "N"*len(config["dbs"])
 
 
 rule all:
@@ -23,10 +23,10 @@ rule all:
 
 if config["h1"] is None: # For PBA input
     dbs_trim = f"-a {config['h2']}"
-    abs_umi_adapter = f"^{dbs}{config['h2']}...{config['h3']}"
+    abs_umi_adapter = f"^{dbs_n}{config['h2']}...{config['h3']}"
 else: # For DBS-Pro input
     dbs_trim = f"-g ^{config['h1']}...{config['h2']}"
-    abs_umi_adapter = f"^{config['h1']}{dbs}{config['h2']}...{config['h3']}"
+    abs_umi_adapter = f"^{config['h1']}{dbs_n}{config['h2']}...{config['h3']}"
 
 
 rule extract_dbs:
@@ -40,8 +40,8 @@ rule extract_dbs:
     params:
         trim=dbs_trim,
         err_rate=config["trim_err_rate"],
-        min_len=config["dbs_len"] - config["dbs_len_span"],
-        max_len=config["dbs_len"] + config["dbs_len_span"],
+        min_len=len(config["dbs"]) - config["dbs_len_span"],
+        max_len=len(config["dbs"]) + config["dbs_len_span"],
     shell:
         "cutadapt"
         " {params.trim}"
@@ -138,19 +138,22 @@ rule abc_cluster:
         " 2> {log}"
 
 
-rule error_correct:
+rule correct_dbs:
     """Combine cluster results with original files to error correct them."""
     output:
-        reads="{file}-corrected.fasta"
+        reads="dbs-corrected.fasta"
     input:
-        reads="{file}-raw.fastq.gz",
-        clusters="{file}-clusters.txt"
-    log: "log_files/correctfastq-{file}.log"
+        reads="dbs-raw.fastq.gz",
+        clusters="dbs-clusters.txt"
+    log: "log_files/correctfastq-dbs.log"
+    params:
+        dbs = config['dbs']
     shell:
         "dbspro correctfastq"
         " {input.reads}"
         " {input.clusters}"
         " {output.reads}"
+        " --barcode-pattern {params.dbs}"
         " 2> {log}"
 
 

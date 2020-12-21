@@ -1,7 +1,7 @@
 ############
 # Trimming #
 ############
-dbs_len: 20 # Length in basepairs of barcode sequence
+dbs: BDVHBDVHBDVHBDVHBDVH # IUPAC string for DBS sequence
 dbs_len_span: 1 # Span (+/-) relative DBS_len for accepted DBS i.e for 1 the span is DBS_len-1 to DBS_len+1 bp.
 umi_len: 6 # Length in basepairs of UMI sequence
 abc_umi_len_span: 0 # Span (+/-) relative the sum of the ABC and UMI lengths

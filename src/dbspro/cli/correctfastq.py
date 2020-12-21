@@ -8,7 +8,7 @@ from collections import Counter
 import os
 import statistics
 
-from dbspro.utils import print_stats
+from dbspro.utils import print_stats, IUPAC_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +22,18 @@ def main(args):
     if os.stat(args.err_corr).st_size == 0:
         logging.warning(f"File {args.err_corr} is empty.")
 
+    pattern = [IUPAC_MAP[base] for base in args.barcode_pattern]
+
     err_corr = dict()
     reads_per_cluster = list()
     seqs_per_cluster = list()
     for cluster_seq, num_reads, raw_seqs in tqdm(parse_starcode_file(args.err_corr), desc="Parsing clusters"):
         summary["Clusters"] += 1
-        reads_per_cluster.append(num_reads)
-        seqs_per_cluster.append(len(raw_seqs))
-        err_corr.update({raw_seq: cluster_seq for raw_seq in raw_seqs})
+        if match_pattern(cluster_seq, pattern):
+            summary["Clusters filtered"] += 1
+            reads_per_cluster.append(num_reads)
+            seqs_per_cluster.append(len(raw_seqs))
+            err_corr.update({raw_seq: cluster_seq for raw_seq in raw_seqs})
 
     # Add statistics
     summary["Max reads per cluster"] = max(reads_per_cluster)
@@ -74,7 +78,16 @@ def parse_starcode_file(filename):
             yield cluster_seq, int(num_reads), raw_seqs
 
 
+def match_pattern(sequence, pattern):
+    if len(sequence) != len(pattern):
+        return False
+
+    return all([base in allowed_bases for base, allowed_bases in zip(sequence, pattern)])
+
+
 def add_arguments(parser):
     parser.add_argument("raw_fastq", help="Fastq file with raw sequences.")
     parser.add_argument("err_corr", help="Starcode default output with error corrected sequences.")
     parser.add_argument("corr_fasta", help="Output file in fasta with error corrected sequences.")
+    parser.add_argument("-b", "--barcode-pattern", required=True,
+                        help="IUPAC string with bases forming pattern to match each barcode too.")
