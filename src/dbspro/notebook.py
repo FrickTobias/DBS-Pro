@@ -79,7 +79,8 @@ pd.DataFrame.filter_quantile = filter_quantile
 def filter_ratio(df: pd.DataFrame, threshold: int, opr=operator.gt) -> pd.DataFrame:
     """Filter barcodes by ratio of reads to UMIs"""
     print(f"Filtering barcodes by Reads/UMI ratio {opr.__name__} {threshold}")
-    return df[opr(df.groupby("Barcode")["ReadCount"].transform('sum') / df.groupby("Barcode")["UMI"].transform('count'), threshold)]
+    return df[opr(df.groupby("Barcode")["ReadCount"].transform('sum') /
+                  df.groupby("Barcode")["UMI"].transform('count'), threshold)]
 
 
 pd.DataFrame.filter_ratio = filter_ratio
@@ -137,7 +138,7 @@ def filter_connected(df: pd.DataFrame, dist: int = 2) -> pd.DataFrame:
     """
     clusterer = UMIClusterer(cluster_method="cluster")
     # Encode each DBS for UMITools and perpare counts
-    dbs_counts = {bytes(dbs, encoding='utf-8'): sum(group["ReadCount"]) for dbs, group in df.groupby("Barcode") \
+    dbs_counts = {bytes(dbs, encoding='utf-8'): sum(group["ReadCount"]) for dbs, group in df.groupby("Barcode")
                   if len(dbs) == 20}
 
     print(f"Pre cluster DBSs: {len(dbs_counts)}")
