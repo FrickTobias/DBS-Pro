@@ -1,16 +1,14 @@
 import pandas as pd
-import dnaio
-import os
-from pathlib import Path
 from snakemake.utils import validate
 
 from dbspro.utils import get_abcs
+from dbspro.cli.init import CONFIGURATION_FILE_NAME, ABC_FILE_NAME
 
 # Read sample and handles files.
-configfile: "dbspro.yaml"
+configfile: CONFIGURATION_FILE_NAME
 validate(config, "config.schema.yaml")
 
-abc = get_abcs("ABC-sequences.fasta")
+abc = get_abcs(ABC_FILE_NAME)
 
 # Get required values
 abc_len = len(abc["Sequence"][0]) - 1
