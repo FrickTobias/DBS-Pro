@@ -11,6 +11,10 @@ import pandas as pd
 import numpy as np
 from itertools import combinations
 from umi_tools import UMIClusterer
+from typing import Union
+
+from tqdm.notebook import tqdm
+from dbspro.utils import jaccard_index
 
 
 def _filter_wrapper(func):
@@ -72,45 +76,49 @@ pd.DataFrame.filter_quantile = filter_quantile
 
 
 @_filter_wrapper
-def filter_dups(df: pd.DataFrame, threshold: int) -> pd.DataFrame:
-    print(f"Filtering DBSs than share {threshold} or more UMI + Target combos")
-    bcs = df.groupby(["Target", "UMI"])["Barcode"].apply(set)
-    umis = list(bcs[bcs.transform(len) >= threshold])
-
-    # Expected rate calculations
-    # mu = 1 / len(umis)
-    # pr_overlap = 1 - sum(poisson.pmf(k, mu) for k in range(threshold))
-    # nr_expect_overlaps = pr_overlap * len(umis) * (len(umis) - 1) / 2
-    # print(f"Expected overlaps {nr_expect_overlaps} (rate: {pr_overlap})")
-
-    connected_barcodes = set()
-    for c1, c2 in combinations(umis, 2):
-        comb = c1 & c2
-        if len(comb) >= threshold:
-            connected_barcodes.update(comb)
-
-    return df[~df["Barcode"].isin(connected_barcodes)].copy()
+def filter_ratio(df: pd.DataFrame, threshold: int, opr=operator.gt) -> pd.DataFrame:
+    """Filter barcodes by ratio of reads to UMIs"""
+    print(f"Filtering barcodes by Reads/UMI ratio {opr.__name__} {threshold}")
+    return df[opr(df.groupby("Barcode")["ReadCount"].transform('sum') / df.groupby("Barcode")["UMI"].transform('count'), threshold)]
 
 
-pd.DataFrame.filter_dups = filter_dups
+pd.DataFrame.filter_ratio = filter_ratio
 
 
 @_filter_wrapper
-def filter_dups_jaccard(df: pd.DataFrame, threshold: float = 0.8, min_len: int = 3) -> pd.DataFrame:
-    print(f"Filter barcodes with at least {min_len} UMI + Target combos whose jaccard index > {threshold}")
-    bcs = df.groupby(["Target", "UMI"])["Barcode"].apply(set)
-    umis = list(bcs[bcs.transform(len) >= min_len])
+def filter_dups(df: pd.DataFrame, threshold: Union[float, int] = 2, min_len: int = 3) -> pd.DataFrame:
+    """Remove barcodes that share a portion of their UMI-Targets combos based on the given threshold. If float
+    then jaccard_index is used. If int then the there must be at least this many combos in common."""
+    def nr_shared(set1, set2):
+        return set1 & set2
 
+    if isinstance(threshold, int):
+        print(f"Filter barcodes who share >{threshold} UMI + Target combos ")
+        compare_function = nr_shared
+    else:
+        print(f"Filter barcodes whose UMI + Target combos have a jaccard index >{threshold}")
+        compare_function = jaccard_index
+
+    d = df.copy()
+    d["Target-UMI"] = d[["Target", "UMI"]].agg("-".join, axis=1)
+    bcs = d.groupby("Barcode")["Target-UMI"].apply(set)
+    bcs = dict(bcs[bcs.transform(len) >= min_len])
+
+    total = (len(bcs) * (len(bcs) - 1)) / 2
     barcodes_to_remove = set()
-    for c1, c2 in combinations(umis, 2):
-        comb = c1 & c2
-        if len(comb) > 0 and len(comb) / len(c1 | c2) > threshold:
-            barcodes_to_remove.update(comb)
+    for bc1, bc2 in tqdm(combinations(bcs, 2), desc="Parsing pairs", total=total, unit_scale=True):
+        if bc1 in barcodes_to_remove and bc2 in barcodes_to_remove:
+            continue
+
+        s1 = bcs[bc1]
+        s2 = bcs[bc2]
+        if compare_function(s1, s2) > threshold:
+            barcodes_to_remove.update({bc1, bc2})
 
     return df[~df["Barcode"].isin(barcodes_to_remove)]
 
 
-pd.DataFrame.filter_dups_jaccard = filter_dups_jaccard
+pd.DataFrame.filter_dups = filter_dups
 
 
 @_filter_wrapper

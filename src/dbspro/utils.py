@@ -193,3 +193,8 @@ def print_stats(summary, name=None, value_width=15, print_to=sys.stderr):
         else:
             print(f"{name:<{max_name_width}} {value:>{value_width}}", file=print_to)
     print("="*width, file=print_to)
+
+
+def jaccard_index(set1, set2) -> float:
+    """Calculate the Jaccard Index metric between two sets"""
+    return len(set1 & set2) / len(set1 | set2)
