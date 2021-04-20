@@ -2,13 +2,14 @@ import pandas as pd
 from snakemake.utils import validate
 
 from dbspro.utils import get_abcs
-from dbspro.cli.init import CONFIGURATION_FILE_NAME, ABC_FILE_NAME
+from dbspro.cli.init import CONFIGURATION_FILE_NAME, ABC_FILE_NAME, SAMPLE_FILE_NAME
 
 # Read sample and handles files.
 configfile: CONFIGURATION_FILE_NAME
 validate(config, "config.schema.yaml")
 
 abc = get_abcs(ABC_FILE_NAME)
+samples = pd.read_csv(SAMPLE_FILE_NAME, sep="\t").set_index("Sample", drop=False)
 
 # Get required values
 abc_len = len(abc["Sequence"][0]) - 1
@@ -16,7 +17,7 @@ dbs_n = "N"*len(config["dbs"])
 
 
 rule all:
-    input: 'report.html', "summary_metrics.csv"
+    input: 'report.html', 'data.tsv'
 
 
 if config["h1"] is None: # For PBA input
@@ -30,10 +31,10 @@ else: # For DBS-Pro input
 rule extract_dbs:
     """Extract DBS and trim handle between DBS and ABC."""
     output:
-        reads="dbs-raw.fastq.gz"
+        reads="{sample}.dbs-raw.fastq.gz"
     input:
-        reads="reads.fastq.gz"
-    log: "log_files/cutadapt-extract-dbs.log"
+        reads="{sample}.fastq.gz"
+    log: "log_files/{sample}.cutadapt-extract-dbs.log"
     threads: 20
     params:
         trim=dbs_trim,
@@ -56,10 +57,10 @@ rule extract_dbs:
 rule extract_abc_umi:
     """Extract ABC and UMI."""
     output:
-        reads="trimmed-abc.fastq.gz"
+        reads="{sample}.trimmed-abc.fastq.gz"
     input:
-        reads="reads.fastq.gz"
-    log: "log_files/cutadapt-extract-abc-umi.log"
+        reads="{sample}.fastq.gz"
+    log: "log_files/{sample}.cutadapt-extract-abc-umi.log"
     threads: 20
     params:
         adapter=abs_umi_adapter,
@@ -82,10 +83,10 @@ rule extract_abc_umi:
 rule demultiplex_abc:
     """Demultiplexes ABC sequnces and trims it to give ABC-specific UMI fastq files."""
     output:
-        reads=touch(expand("ABCs/{name}-UMI-raw.fastq.gz", name=abc['Target']))
+        reads=touch(expand("ABCs/{{sample}}.{name}-UMI-raw.fastq.gz", name=abc['Target']))
     input:
-        reads="trimmed-abc.fastq.gz"
-    log: "log_files/cutadapt-id-abc.log"
+        reads="{sample}.trimmed-abc.fastq.gz"
+    log: "log_files/{sample}.cutadapt-id-abc.log"
     params:
         file=config["abc_file"],
         err_rate=config["demultiplex_err_rate"]
@@ -94,7 +95,7 @@ rule demultiplex_abc:
         " -g file:{params.file}"
         " --no-indels"
         " -e {params.err_rate}"
-        " -o ABCs/{{name}}-UMI-raw.fastq.gz"
+        " -o ABCs/{wildcards.sample}.{{name}}-UMI-raw.fastq.gz"
         " {input.reads}"
         " > {log}"
 
@@ -102,10 +103,10 @@ rule demultiplex_abc:
 rule dbs_cluster:
     """Cluster DBS sequence using starcode"""
     output:
-        clusters="dbs-clusters.txt"
+        clusters="{sample}.dbs-clusters.txt"
     input:
-        reads="dbs-raw.fastq.gz"
-    log: "log_files/starcode-dbs-cluster.log"
+        reads="{sample}.dbs-raw.fastq.gz"
+    log: "log_files/{sample}.starcode-dbs-cluster.log"
     threads: 20
     shell:
         "pigz -cd {input.reads} |"
@@ -121,11 +122,11 @@ rule abc_cluster:
     """Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)
     a empty output file will also be created."""
     output:
-        reads="ABCs/{target}-UMI-corrected.fasta"
+        reads="ABCs/{sample}.{target}-UMI-corrected.fasta"
     input:
-        abc_reads="ABCs/{target}-UMI-raw.fastq.gz",
-        dbs_corrected="dbs-corrected.fasta"
-    log: "log_files/splitcluster-{target}.log"
+        abc_reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
+        dbs_corrected="{sample}.dbs-corrected.fasta"
+    log: "log_files/{sample}.splitcluster-{target}.log"
     shell:
         "dbspro splitcluster"
         " {input.dbs_corrected}"
@@ -139,11 +140,11 @@ rule abc_cluster:
 rule correct_dbs:
     """Combine cluster results with original files to error correct them."""
     output:
-        reads="dbs-corrected.fasta"
+        reads="{sample}.dbs-corrected.fasta"
     input:
-        reads="dbs-raw.fastq.gz",
-        clusters="dbs-clusters.txt"
-    log: "log_files/correctfastq-dbs.log"
+        reads="{sample}.dbs-raw.fastq.gz",
+        clusters="{sample}.dbs-clusters.txt"
+    log: "log_files/{sample}.correctfastq-dbs.log"
     params:
         dbs = config['dbs']
     shell:
@@ -158,11 +159,11 @@ rule correct_dbs:
 rule analyze:
     """Analyzes all result files"""
     output:
-        data="data.tsv"
+        data="{sample}.data.tsv"
     input:
-        dbs_fasta="dbs-corrected.fasta",
-        abc_fastas=expand("ABCs/{abc}-UMI-corrected.fasta", abc=abc['Target'])
-    log: "log_files/analyze.log"
+        dbs_fasta="{sample}.dbs-corrected.fasta",
+        abc_fastas=expand("ABCs/{{sample}}.{abc}-UMI-corrected.fasta", abc=abc['Target'])
+    log: "log_files/{sample}.analyze.log"
     shell:
         "dbspro analyze"
         " -o {output.data}"
@@ -170,6 +171,20 @@ rule analyze:
         " {input.dbs_fasta}"
         " {input.abc_fastas}"
         " 2> {log}"
+
+
+rule merge_data:
+    """Merge data from samples"""
+    output:
+        data = "data.tsv"
+    input: 
+        data_files = expand("{sample}.data.tsv", sample=samples["Sample"])
+    run:
+        merged_data = []
+        for file in input.data_files:
+            merged_data.append(pd.read_csv(file, sep="\t"))
+        merged_data = pd.concat(merged_data)
+        merged_data.to_csv(output.data, sep="\t", index=False)
 
 
 rule make_report:
@@ -184,17 +199,7 @@ rule make_report:
         import pkg_resources
         report_path = pkg_resources.resource_filename("dbspro", 'report_template.ipynb')
         shell(
-            "jupyter nbconvert --to notebook {report_path} --output {output.notebook} --output-dir . 2>> >(tee {log} >&2);"
+            "jupyter nbconvert --ClearMetadataPreprocessor.enabled=True --to notebook {report_path} --output {output.notebook} --output-dir . 2>> >(tee {log} >&2);"
             " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> >(tee {log} >&2);"
             " jupyter nbconvert --to html {output.notebook} 2>> >(tee {log} >&2)"
          )
-
-rule make_summary:
-    output: "summary_metrics.csv"
-    input: "data.tsv"
-    log: "log_files/summary_metrics.log"
-    shell:
-        "dbspro summary"
-        " -d ."
-        " -o {output}"
-        " 2> {log}"

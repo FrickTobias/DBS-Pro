@@ -1,7 +1,7 @@
 """
 Combines demultiplexed and error corrected FASTA file and output a aggregated TSV file on the format:
 
-    Barcode TargetName  UMI ReadCount
+    Barcode Target  UMI ReadCount   Sample
 
 Output statistics based on filter.
 
@@ -26,7 +26,8 @@ def main(args):
     summary = Counter()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    abc_names = {file_name: os.path.basename(file_name).split('-')[0] for file_name in args.targets}
+    abc_names = {file_name: os.path.basename(file_name).split('-')[0].split(".")[-1] for file_name in args.targets}
+    sample_name = os.path.basename(args.targets[0]).split(".")[0]
 
     logger.info("Saving DBS information to RAM")
     bc_dict = get_dbs_headers(args.dbs)
@@ -59,7 +60,7 @@ def main(args):
 
     summary["Total DBS count"] = len(results)
 
-    df, df_filt = make_dataframes(results, args.filter)
+    df, df_filt = make_dataframes(results, args.filter, sample_name=sample_name)
 
     output_stats(df_filt, sorted(abc_names.values()))
 
@@ -122,7 +123,7 @@ def n50_counter(input_list):
             return num
 
 
-def make_dataframes(results, limit):
+def make_dataframes(results, limit, sample_name):
     # Generate filtered and unfiltered dataframes from data.
     output = list()
     output_filt = list()
@@ -134,14 +135,15 @@ def make_dataframes(results, limit):
                     "Barcode": bc,
                     "Target": abc,
                     "UMI": umi,
-                    "ReadCount": read_count
+                    "ReadCount": read_count,
+                    "Sample": sample_name
                 }
                 output.append(line)
                 if is_ok:
                     output_filt.append(line)
 
     # Create dataframe with barcode as index and columns with ABC data.
-    cols = ["Barcode", "Target", "UMI", "ReadCount"]
+    cols = ["Barcode", "Target", "UMI", "ReadCount", "Sample"]
     return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True), \
         pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
 

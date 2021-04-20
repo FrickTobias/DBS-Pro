@@ -8,21 +8,28 @@ import sys
 import dnaio
 from pathlib import Path
 from importlib_resources import read_binary
+from typing import List
 
 logger = logging.getLogger(__name__)
 
 CONFIGURATION_FILE_NAME = "dbspro.yaml"
 ABC_FILE_NAME = "ABC-sequences.fasta"
 ACCEPTED_FILE_EXT = ".fastq.gz"
+SAMPLE_FILE_NAME = "samples.tsv"
 
 
 def add_arguments(parser):
-    parser.add_argument("reads", type=Path, help="Read file (.fastq.gz)")
-    parser.add_argument("directory", type=Path, help="New analysis directory to create")
-    parser.add_argument("--abc", required=True, type=Path, metavar="ABC-sequences.fasta",
-                        help="Antibody barcode (ABC) sequence fasta file. Should contain the target name in the "
-                             "header and the ABC seqeunce for demuliplexing.")
-
+    parser.add_argument(
+        "reads", nargs="+", type=Path, help="Read file(s) (.fastq.gz)"
+    )
+    parser.add_argument(
+        "directory", type=Path, help="New analysis directory to create"
+    )
+    parser.add_argument(
+        "--abc", required=True, type=Path, metavar="ABC-sequences.fasta",
+        help="Antibody barcode (ABC) sequence fasta file. Should contain the target name in the "
+             "header and the ABC seqeunce for demuliplexing."
+    )
     return parser
 
 
@@ -30,7 +37,7 @@ def main(args):
     init(args.directory, args.reads, args.abc)
 
 
-def init(directory: Path, reads: Path, abc: Path):
+def init(directory: Path, reads: List[Path], abc: Path):
     if " " in str(directory):
         logger.error("The name of the analysis directory must not contain spaces")
         sys.exit(1)
@@ -46,7 +53,7 @@ def init(directory: Path, reads: Path, abc: Path):
     )
 
 
-def create_and_populate_analysis_directory(directory: Path, reads: Path, abc_file: Path):
+def create_and_populate_analysis_directory(directory: Path, reads: List[Path], abc_file: Path):
     try:
         directory.mkdir()
     except OSError as e:
@@ -68,7 +75,14 @@ def create_and_populate_analysis_directory(directory: Path, reads: Path, abc_fil
 
             open_out.write(abc)
 
-    create_symlink(reads, directory, "reads.fastq.gz")
+
+    with (directory / SAMPLE_FILE_NAME).open(mode="w") as f:
+        print("Sample", file=f)
+        for file in reads:
+            name = file.name.replace(".fastq.gz", "").replace("-", "_").replace(".", "_") 
+            logger.info(f"Renaming {file.name} to {name}")
+            create_symlink(file, directory, name + ".fastq.gz")
+            print(name, file=f)
 
 
 def fail_if_inaccessible(path):

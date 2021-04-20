@@ -1,8 +1,10 @@
 """
 Update configuration file. If no --set option is given the current settings are printed.
-
-Copied & modified from BLR github 16/12 - 2019, https://github.com/FrickTobias/BLR
 """
+# Copied & modified from BLR github 16/12 - 2019, https://github.com/FrickTobias/BLR
+# Script is based on repos NBISSweden/IgDisover config script.
+# Link https://github.com/NBISweden/IgDiscover/blob/master/src/igdiscover/cli/config.py
+
 import sys
 import os
 import logging
@@ -17,9 +19,6 @@ SCHEMA_FILE = "config.schema.yaml"
 
 
 def main(args):
-    # Script is based on repos NBISSweden/IgDisover config script.
-    # Link https://github.com/NBISweden/IgDiscover/blob/master/src/igdiscover/cli/config.py
-
     if args.set:
         change_config(args.file, args.set)
     elif args.print_construct:
@@ -38,15 +37,15 @@ def print_construct(file):
     configs, yaml = load_yaml(file)
 
     # Get handles
-    h1 = Handle("H1", configs["h1"])
-    dbs = Handle("DBS", "N"*configs["dbs_len"])
+    h1 = Handle("H1", configs["h1"]) if configs["h1"] is not None else Handle("H1", "")
+    dbs = Handle("DBS", configs["dbs"])
     h2 = Handle("H2", configs["h2"])
     umi = Handle("UMI", "N"*configs["umi_len"])
     abcs = get_abcs(configs["abc_file"])
     abc = Handle("ABC", "X"*len(abcs["Sequence"][0].strip("^")))
     h3 = Handle("H3", configs["h3"])
 
-    handles = [h1, dbs, h2, abc, umi, h3]
+    handles = [h1, dbs, h2, abc, umi, h3] if configs["h1"] is not None else [h1, dbs, h2, abc, umi, h3]
 
     print(
         f"--- CONSTRUCT LAYOUT (Total length = {sum(h.length for h in handles)}) ---\n"
@@ -119,7 +118,7 @@ def load_yaml(filename):
 
 
 def add_arguments(parser):
-    parser.add_argument("--set", nargs=2, metavar=("KEY", "VALUE"), action="append",
+    parser.add_argument("-s", "--set", nargs=2, metavar=("KEY", "VALUE"), action="append",
                         help="Set KEY to VALUE. Use KEY.SUBKEY[.SUBSUBKEY...] for nested keys. For empty values "
                              "write 'null'. Can be given multiple times.")
     parser.add_argument("--file", default=DEFAULT_PATH,
