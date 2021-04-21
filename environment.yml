@@ -1,22 +1,26 @@
-# Whenever this file is updated, you need to run misc/condalock.sh `bash
-# misc/condalock.sh` to create the environment.lock.yml file.
+# Whenever this file is updated, you need to run: `conda-lock -f environment.yml -p linux-64 -p osx-64 
+# --filename-template "environment.{platform}.lock"` to generate the environment.{platform}.lock files.
+# conda-lock is avialable from pip (`pip install conda-lock`) or conda (`conda install conda-lock -c conda-forge`).
 channels:
   - conda-forge
   - defaults
   - bioconda
 dependencies:
-  - cutadapt
-  - dnaio
-  - jupyter
-  - pandas
-  - pigz
-  - pysam
-  - python=3.6
-  - samtools
-  - seaborn
-  - starcode
-  - tqdm
-  - importlib_resources
-  - snakemake-minimal
-  - umi_tools
-  - ruamel.yaml
+  - bioconda::cutadapt
+  - bioconda::dnaio
+  - conda-forge::importlib_resources
+  - conda-forge::ipython>=7
+  - conda-forge::jupyter
+  - conda-forge::numpy
+  - conda-forge::pandas
+  - conda-forge::pigz
+  - conda-forge::pip
+  - bioconda::pysam
+  - conda-forge::python=3.6
+  - conda-forge::ruamel.yaml
+  - conda-forge::seaborn
+  - bioconda::seqtk
+  - bioconda::snakemake-minimal
+  - bioconda::starcode
+  - conda-forge::tqdm
+  - bioconda::umi_tools

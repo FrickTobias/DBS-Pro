@@ -21,7 +21,7 @@ before_install:
   - chmod +x tests/run.sh
 
 install:
-  - conda env create -n testenv -f environment.${TRAVIS_OS_NAME}.lock.yml
+  - conda create --name testenv --file environment.${TRAVIS_OS_NAME}-64.lock
   - conda activate testenv
   - conda install pytest
   - pip install --no-deps .
