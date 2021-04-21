@@ -8,35 +8,70 @@ Output statistics based on filter.
 """
 
 import logging
-import pandas as pd
-import dnaio
 from collections import defaultdict, Counter
-from tqdm import tqdm
 import os
 import sys
+
+import dnaio
+import pandas as pd
+from tqdm import tqdm
 
 from dbspro.utils import print_stats
 
 logger = logging.getLogger(__name__)
 
 
+def add_arguments(parser):
+    parser.add_argument(
+        "dbs",
+        help="Path to FASTA with error-corrected DBS barcode sequences."
+    )
+    parser.add_argument(
+        "targets", nargs="+",
+        help="Path to directory containing error-corrected target (ABC) FASTAs with UMI "
+             "(unique molecular identifier) sequences."
+    )
+    parser.add_argument(
+        "-o", "--output", default=sys.stdout,
+        help="Output TSV. Defualt: %(default)s"
+    )
+    parser.add_argument(
+        "-f", "--filter", type=int, default=0,
+        help="Number of minimum reads required for an ABC to be included in output. Default: %(default)s"
+    )
+
+
 def main(args):
+    run_analysis(
+        dbs=args.dbs,
+        targets=args.targets,
+        output=args.output,
+        filter=args.filter,
+    )
+
+
+def run_analysis(
+    dbs: str,
+    targets: None,
+    output: str,
+    filter: int
+):
     # Barcode processing
     logger.info("Starting analysis")
     summary = Counter()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    abc_names = {file_name: os.path.basename(file_name).split('-')[0].split(".")[-1] for file_name in args.targets}
-    sample_name = os.path.basename(args.targets[0]).split(".")[0]
+    abc_names = {file_name: os.path.basename(file_name).split('-')[0].split(".")[-1] for file_name in targets}
+    sample_name = os.path.basename(targets[0]).split(".")[0]
 
     logger.info("Saving DBS information to RAM")
-    bc_dict = get_dbs_headers(args.dbs)
+    bc_dict = get_dbs_headers(dbs)
     logger.info("Finished processing DBS sequences")
 
     # Counting UMI:s found in the different ABC:s for all barcodes.
     logger.info("Calculating stats")
     results = dict()
-    for current_abc in args.targets:
+    for current_abc in targets:
         logger.info(f"Reading file: {current_abc}")
 
         with dnaio.open(current_abc, mode="r", fileformat="fasta") as reader:
@@ -60,7 +95,7 @@ def main(args):
 
     summary["Total DBS count"] = len(results)
 
-    df, df_filt = make_dataframes(results, args.filter, sample_name=sample_name)
+    df, df_filt = make_dataframes(results, filter, sample_name=sample_name)
 
     output_stats(df_filt, sorted(abc_names.values()))
 
@@ -68,7 +103,7 @@ def main(args):
     df = df.sort_values(["Barcode", "Target", "UMI"])
 
     logging.info("Writing output")
-    df.to_csv(args.output, sep="\t")
+    df.to_csv(output, sep="\t")
 
     print_stats(summary, name=__name__)
 
@@ -129,7 +164,7 @@ def make_dataframes(results, limit, sample_name):
     output_filt = list()
     for bc, abcs in tqdm(results.items(), desc="Parsing results"):
         for abc, umis in abcs.items():
-            is_ok = True if sum(umis.values()) >= limit else False
+            is_ok = sum(umis.values()) >= limit
             for umi, read_count in umis.items():
                 line = {
                     "Barcode": bc,
@@ -146,17 +181,3 @@ def make_dataframes(results, limit, sample_name):
     cols = ["Barcode", "Target", "UMI", "ReadCount", "Sample"]
     return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True), \
         pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
-
-
-def add_arguments(parser):
-    # Arguments
-    parser.add_argument("dbs",
-                        help="Path to FASTA with error-corrected DBS barcode sequences.")
-    parser.add_argument("targets", nargs="+",
-                        help="Path to directory containing error-corrected target (ABC) FASTAs with UMI "
-                             "(unique molecular identifier) sequences.")
-
-    parser.add_argument("-o", "--output", default=sys.stdout, help="Output TSV. Defualt: %(default)s")
-
-    parser.add_argument("-f", "--filter", type=int, default=0, help="Number of minimum reads required for an ABC "
-                                                                    "to be included in output. DEFAULT: 0")
