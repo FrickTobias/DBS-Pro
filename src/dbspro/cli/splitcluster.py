@@ -1,28 +1,106 @@
 """
 Split ABC FASTQ with UMIs based on DBS cluster and cluster UMIs for each partion using UMI-tools.
 """
-import dnaio
-from umi_tools import UMIClusterer
 from collections import Counter, defaultdict
 import logging
+
+import dnaio
 from tqdm import tqdm
+from umi_tools import UMIClusterer
 
 from dbspro.utils import print_stats
 
 logger = logging.getLogger(__name__)
 
 
-def map_names_to_umi_seq(file, summary, length_filter):
-    name_to_umi_sequence = dict()
-    for read in tqdm(file, desc="Filtering ABC reads"):
-        summary["ABC reads total"] += 1
-        if length_filter == len(read.sequence):
-            name_to_umi_sequence[read.name] = read.sequence
-            summary["ABC reads filtered"] += 1
+def add_arguments(parser):
+    parser.add_argument(
+        "corrected_dbs_fasta",
+        help="Input FASTA with corrected DBS sequences"
+    )
+    parser.add_argument(
+        "uncorrected_umi_fastq",
+        help="Input FASTQ for demultiplexed ABC with uncorrected UMI sequences."
+    )
+    parser.add_argument(
+        "-o", "--output-fasta", default="-", type=str,
+        help="Output FASTA for demultiplexed ABC with corrected UMI sequences. Default: write to stdout"
+    )
+    parser.add_argument(
+        "-t", "--threshold", default=1, type=int,
+        help="Edit distance threshold to cluster sequences. Defaulf: %(default)s"
+    )
+    parser.add_argument(
+        "-l", "--length", type=int, required=True,
+        help="Required length of UMI sequence. Reads of wrong length are filtered out."
+    )
+    parser.add_argument(
+        "-m", "--method", type=str, default="directional",
+        choices=["unique", "percentile", "cluster", "adjacency", "directional"],
+        help="Select UMItools clustering method. Defaulf: %(default)s"
+    )
 
-    if summary["ABC reads total"]:
-        summary["ABC reads filtered (%)"] = 100 * summary["ABC reads filtered"] / summary["ABC reads total"]
-    return name_to_umi_sequence
+
+def main(args):
+    run_splitcluster(
+        corrected_barcodes=args.corrected_dbs_fasta,
+        uncorrected_umis=args.uncorrected_umi_fastq,
+        output_fasta=args.output_fasta,
+        dist_threshold=args.threshold,
+        required_length=args.length,
+        clustering_method=args.method,
+    )
+
+
+def run_splitcluster(
+    corrected_barcodes: str,
+    uncorrected_umis: str,
+    output_fasta: str,
+    dist_threshold: int,
+    required_length: int,
+    clustering_method: str,
+):
+    logger.info(f"Filtering reads not of length {required_length} bp.")
+    summary = Counter()
+
+    # Read ABC fasta with UMI sequences and save read name and sequence.
+    with dnaio.open(uncorrected_umis, mode="r") as file:
+        name_to_umi_seq = {read.name: read.sequence for read in file if len(read.sequence) == required_length}
+
+    logger.info("Assigning ABC reads to DBS clusters")
+
+    with dnaio.open(corrected_barcodes, mode="r") as file:
+        dbs_groups = assign_to_dbs(file, name_to_umi_seq, summary)
+
+    summary["DBS clusters linked to ABC"] = len(dbs_groups)
+
+    logger.info(f"Starting clustering of UMIs within each DBS clusters using method: {clustering_method}")
+    logger.info(f"Writing corrected reads to {output_fasta}")
+
+    # Set clustering method
+    # Based on https://umi-tools.readthedocs.io/en/latest/API.html
+    clusterer = UMIClusterer(cluster_method=clustering_method)
+
+    with dnaio.open(output_fasta, fileformat="fasta", mode="w") as output:
+        for _, umis in tqdm(dbs_groups.items(), desc="Correcting UMIs"):
+            for read in correct_umis(umis, clusterer, dist_threshold, summary):
+                output.write(read)
+
+    print_stats(summary, name=__name__)
+
+
+def correct_umis(umis, clusterer, dist_threshold, summary) -> dnaio.Sequence:
+    umi_counts = {bytes(umi, encoding='utf-8'): len(reads) for umi, reads in umis.items()}
+    summary["Total UMIs"] += len(umi_counts)
+
+    for cluster in clusterer(umi_counts, threshold=dist_threshold):
+        summary["Total clustered UMIs"] += 1
+        seqs = [seq.decode("utf-8") for seq in cluster]
+        canonical_sequnce = seqs[0]
+
+        for seq in seqs:
+            for read_name in umis[seq]:
+                yield dnaio.Sequence(read_name, canonical_sequnce)
 
 
 def assign_to_dbs(file, name_to_umi_seq, summary):
@@ -61,68 +139,3 @@ def assign_to_dbs(file, name_to_umi_seq, summary):
         summary["DBS reads matched to ABCs (%)"] = 100 * summary["DBS reads matched to ABCs"] / summary["DBS reads"]
 
     return dbs_groups
-
-
-def main(args):
-    logger.info(f"Filtering reads not of length {args.length} bp.")
-    summary = Counter()
-
-    # Read ABC fasta with UMI sequences and save read name and sequence.
-    with dnaio.open(args.uncorrected_umi_fastq, mode="r") as file:
-        name_to_umi_seq = map_names_to_umi_seq(file, summary, length_filter=args.length)
-
-    logger.info("Assigning ABC reads to DBS clusters")
-
-    with dnaio.open(args.corrected_dbs_fasta, mode="r") as file:
-        dbs_groups = assign_to_dbs(file, name_to_umi_seq, summary)
-
-    summary["DBS clusters linked to ABC"] = len(dbs_groups)
-
-    logger.info(f"Starting clustering of UMIs within each DBS clusters using method: {args.method}")
-    logger.info(f"Writing corrected reads to {args.output_fasta}")
-
-    # Set clustering method
-    # Based on https://umi-tools.readthedocs.io/en/latest/API.html
-    clusterer = UMIClusterer(cluster_method=args.method)
-
-    with dnaio.open(args.output_fasta, fileformat="fasta", mode="w") as output:
-        for dbs, umis in tqdm(dbs_groups.items(), desc="Correcting UMIs"):
-            # Encode each UMI for UMITools and perpare counts
-            counts = {bytes(umi, encoding='utf-8'): len(reads) for umi, reads in umis.items()}
-
-            summary["Total UMIs"] += len(counts)
-
-            # Cluster umis
-            clustered_umis = clusterer(counts, threshold=args.threshold)
-
-            summary["Total clustered UMIs"] += len(clustered_umis)
-
-            # Loop over clusters and write reads with corrected UMI.
-            for cluster in clustered_umis:
-                seqs = [seq.decode("utf-8") for seq in cluster]
-                canonical_sequnce = seqs[0]
-
-                for seq in seqs:
-                    for read_name in umis[seq]:
-                        read = dnaio.Sequence(read_name, canonical_sequnce)
-                        output.write(read)
-
-    print_stats(summary, name=__name__)
-
-
-def add_arguments(parser):
-    parser.add_argument("corrected_dbs_fasta",
-                        help="Input FASTA with corrected DBS sequences")
-    parser.add_argument("uncorrected_umi_fastq",
-                        help="Input FASTQ for demultiplexed ABC with uncorrected UMI sequences.")
-
-    parser.add_argument("-o", "--output-fasta", default="-", type=str,
-                        help="Output FASTA for demultiplexed ABC with corrected UMI sequences. Default: write to "
-                             "stdout")
-    parser.add_argument("-t", "--threshold", default=1, type=int,
-                        help="Edit distance threshold to cluster sequences. Defaulf: %(default)s")
-    parser.add_argument("-l", "--length", type=int, required=True,
-                        help="Required length of UMI sequence. Reads of wrong length are filtered out.")
-    parser.add_argument("-m", "--method", type=str, default="directional",
-                        choices=["unique", "percentile", "cluster", "adjacency", "directional"],
-                        help="Select UMItools clustering method. Defaulf: %(default)s")
