@@ -168,7 +168,7 @@ rule correct_dbs:
         "dbspro correctfastq"
         " {input.reads}"
         " {input.clusters}"
-        " {output.reads}"
+        " --output-fasta {output.reads}"
         " --barcode-pattern {params.dbs}"
         " 2> {log}"
 

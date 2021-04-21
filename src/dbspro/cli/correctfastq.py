@@ -1,61 +1,75 @@
 """
-Combines starcode output files into raw fastq files creating error corrected fastq files
+Correct FASTQ/FASTA with the corrected sequences from starcode clustering
 """
+from collections import Counter, defaultdict
 import logging
-from tqdm import tqdm
-import dnaio
-from xopen import xopen
-from collections import Counter
 import os
 import statistics
+
+import dnaio
+from tqdm import tqdm
+from xopen import xopen
 
 from dbspro.utils import print_stats, IUPAC_MAP
 
 logger = logging.getLogger(__name__)
 
 
+def add_arguments(parser):
+    parser.add_argument(
+        "input",
+        help="FASTQ/FASTA with uncorrected sequences."
+    )
+    parser.add_argument(
+        "corrections",
+        help="Starcode output in format, tab-separate entries: <corrected sequnence>, <read count>, <comma-separated"
+             "uncorrected sequences>."
+    )
+    parser.add_argument(
+        "-o", "--output-fasta",
+        help="Output FASTA with corrected sequences."
+    )
+    parser.add_argument(
+        "-b", "--barcode-pattern", required=True,
+        help="IUPAC string with bases forming pattern to match each corrected sequence too."
+    )
+
+
 def main(args):
+    run_correctfastq(
+        uncorrected_file=args.input,
+        corrections_file=args.corrections,
+        corrected_fasta=args.output_fasta,
+        barcode_pattern=args.barcode_pattern,
+    )
+
+
+def run_correctfastq(
+    uncorrected_file: str,
+    corrections_file: str,
+    corrected_fasta: str,
+    barcode_pattern: str,
+):
     logger.info("Starting analysis")
-    logger.info(f"Processing file: {args.err_corr}")
+    logger.info(f"Processing file: {corrections_file}")
 
     summary = Counter()
 
-    if os.stat(args.err_corr).st_size == 0:
-        logging.warning(f"File {args.err_corr} is empty.")
+    if os.stat(corrections_file).st_size == 0:
+        logging.warning(f"File {corrections_file} is empty.")
 
-    pattern = [IUPAC_MAP[base] for base in args.barcode_pattern]
+    pattern = [IUPAC_MAP[base] for base in barcode_pattern]
 
-    err_corr = dict()
-    reads_per_cluster = list()
-    seqs_per_cluster = list()
-    for cluster_seq, num_reads, raw_seqs in tqdm(parse_starcode_file(args.err_corr), desc="Parsing clusters"):
-        summary["Clusters"] += 1
-        if match_pattern(cluster_seq, pattern):
-            summary["Clusters filtered"] += 1
-            reads_per_cluster.append(num_reads)
-            seqs_per_cluster.append(len(raw_seqs))
-            err_corr.update({raw_seq: cluster_seq for raw_seq in raw_seqs})
-
-    # Add statistics
-    summary["Max reads per cluster"] = max(reads_per_cluster)
-    summary["Mean reads per cluster"] = statistics.mean(reads_per_cluster)
-    summary["Median reads per cluster"] = statistics.median(reads_per_cluster)
-    summary["Clusters with one read"] = sum(1 for r in reads_per_cluster if r == 1)
-
-    summary["Max sequences per cluster"] = max(seqs_per_cluster)
-    summary["Mean sequences per cluster"] = statistics.mean(seqs_per_cluster)
-    summary["Median sequences per cluster"] = statistics.median(seqs_per_cluster)
-    summary["Clusters with one sequence"] = sum(1 for r in seqs_per_cluster if r == 1)
+    corr_map = get_corrections(corrections_file, pattern, summary)
 
     logger.info("Correcting sequences and writing to output file.")
 
-    with dnaio.open(args.raw_fastq, mode="r", fileformat="fastq") as reader, \
-            dnaio.open(args.corr_fasta, mode="w", fileformat="fasta") as writer:
+    with dnaio.open(uncorrected_file, mode="r") as reader, \
+            dnaio.open(corrected_fasta, mode="w") as writer:
         for read in tqdm(reader, desc="Parsing reads"):
-
             summary["Reads total"] += 1
-            if read.sequence in err_corr:
-                read.sequence = err_corr[read.sequence]
+            if read.sequence in corr_map:
+                read.sequence = corr_map[read.sequence]
 
                 writer.write(read)
                 summary["Reads corrected"] += 1
@@ -79,16 +93,28 @@ def parse_starcode_file(filename):
             yield cluster_seq, int(num_reads), raw_seqs
 
 
+def get_corrections(corrections_file, pattern, summary):
+    corr_map = dict()
+    stats = defaultdict(list)
+    for cluster_seq, num_reads, raw_seqs in tqdm(parse_starcode_file(corrections_file), desc="Parsing clusters"):
+        summary["Clusters"] += 1
+        if match_pattern(cluster_seq, pattern):
+            summary["Clusters filtered"] += 1
+            stats["read"].append(num_reads)
+            stats["sequence"].append(len(raw_seqs))
+            corr_map.update({raw_seq: cluster_seq for raw_seq in raw_seqs})
+
+    # Add statistics
+    for stat, values in stats.items():
+        summary[f"Max {stat}s per cluster"] = max(values)
+        summary[f"Mean {stat}s per cluster"] = statistics.mean(values)
+        summary[f"Median {stat}s per cluster"] = statistics.median(values)
+        summary[f"Clusters with one {stat}"] = sum(1 for v in values if v == 1)
+    return corr_map
+
+
 def match_pattern(sequence, pattern):
     if len(sequence) != len(pattern):
         return False
 
     return all([base in allowed_bases for base, allowed_bases in zip(sequence, pattern)])
-
-
-def add_arguments(parser):
-    parser.add_argument("raw_fastq", help="Fastq file with raw sequences.")
-    parser.add_argument("err_corr", help="Starcode default output with error corrected sequences.")
-    parser.add_argument("corr_fasta", help="Output file in fasta with error corrected sequences.")
-    parser.add_argument("-b", "--barcode-pattern", required=True,
-                        help="IUPAC string with bases forming pattern to match each barcode too.")
