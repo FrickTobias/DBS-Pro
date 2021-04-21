@@ -27,13 +27,31 @@ else: # For DBS-Pro input
     dbs_trim = f"-g ^{config['h1']}...{config['h2']}"
     abs_umi_adapter = f"^{config['h1']}{dbs_n}{config['h2']}...{config['h3']}"
 
+do_sampling = "subsampled." if config["subsample"] != -1 else ""
+
+
+rule subsample:
+    """Subsample input reads to required depth"""
+    output:
+        reads = "{sample}.subsampled.fastq.gz"
+    input:
+        reads = "{sample}.fastq.gz"
+    params:
+        number = config["subsample"] if config["subsample"] > 0 else samples["Reads"].min()
+    shell:
+        "seqtk sample"
+        " -s 9999"
+        " {input.reads}"
+        " {params.number}"
+        " | pigz > {output.reads}"
+
 
 rule extract_dbs:
     """Extract DBS and trim handle between DBS and ABC."""
     output:
         reads="{sample}.dbs-raw.fastq.gz"
     input:
-        reads="{sample}.fastq.gz"
+        reads=f"{{sample}}.{do_sampling}fastq.gz"
     log: "log_files/{sample}.cutadapt-extract-dbs.log"
     threads: 20
     params:
@@ -59,7 +77,7 @@ rule extract_abc_umi:
     output:
         reads="{sample}.trimmed-abc.fastq.gz"
     input:
-        reads="{sample}.fastq.gz"
+        reads=f"{{sample}}.{do_sampling}fastq.gz"
     log: "log_files/{sample}.cutadapt-extract-abc-umi.log"
     threads: 20
     params:

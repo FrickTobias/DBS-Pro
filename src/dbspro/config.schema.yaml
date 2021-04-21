@@ -43,6 +43,10 @@ properties:
     description: Maximum edit distance to cluster ABC sequences in Starcode.
     default: 1
   filter_reads:
-    typw: number
+    type: number
     description: Minimum reads required for an ABC to be included in analysis output.
     default: 1
+  subsample:
+    type: integer
+    description: Subsample to this amount of reads. '0' = subsample the to the lowest count sample. '-1' = skip.
+    default: -1

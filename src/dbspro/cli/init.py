@@ -75,14 +75,13 @@ def create_and_populate_analysis_directory(directory: Path, reads: List[Path], a
 
             open_out.write(abc)
 
-
     with (directory / SAMPLE_FILE_NAME).open(mode="w") as f:
-        print("Sample", file=f)
+        print("Sample", "Reads", sep="\t", file=f)
         for file in reads:
-            name = file.name.replace(".fastq.gz", "").replace("-", "_").replace(".", "_") 
+            name = file.name.replace(".fastq.gz", "").replace("-", "_").replace(".", "_")
             logger.info(f"Renaming {file.name} to {name}")
             create_symlink(file, directory, name + ".fastq.gz")
-            print(name, file=f)
+            print(name, count_reads(file), sep="\t", file=f)
 
 
 def fail_if_inaccessible(path):
@@ -105,3 +104,8 @@ def create_symlink(readspath, dirname, target):
         raise FileNotFoundError(f"File {readspath} is not accepted input.")
 
     os.symlink(src, os.path.join(dirname, target))
+
+
+def count_reads(fastq: Path) -> int:
+    with dnaio.open(fastq, mode="r") as f:
+        return sum([1 for _ in f])
