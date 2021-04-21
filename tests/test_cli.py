@@ -21,7 +21,7 @@ def test_change_config(tmpdir):
     change_config(workdir / "dbspro.yaml", [("dbs_cluster_dist", "1")])
 
 
-def test_output_files(tmpdir, targets=["report.ipynb", "data.tsv"]):
+def test_output_files(tmpdir, targets=["report.ipynb", "data.tsv.gz"]):
     workdir = tmpdir / "analysis"
     init(workdir, [TESTDATA_READS], ABC_SEQUENCES)
     run(targets=targets, workdir=workdir)

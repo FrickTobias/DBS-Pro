@@ -17,7 +17,7 @@ dbs_n = "N"*len(config["dbs"])
 
 
 rule all:
-    input: 'report.html', 'data.tsv'
+    input: 'report.html', 'data.tsv.gz'
 
 
 if config["h1"] is None: # For PBA input
@@ -142,7 +142,7 @@ rule abc_cluster:
         reads="ABCs/{sample}.{target}-UMI-corrected.fasta"
     input:
         abc_reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
-        dbs_corrected="{sample}.dbs-corrected.fasta"
+        dbs_corrected="{sample}.dbs-corrected.fasta.gz"
     log: "log_files/{sample}.splitcluster-{target}.log"
     shell:
         "dbspro splitcluster"
@@ -157,7 +157,7 @@ rule abc_cluster:
 rule correct_dbs:
     """Combine cluster results with original files to error correct them."""
     output:
-        reads="{sample}.dbs-corrected.fasta"
+        reads="{sample}.dbs-corrected.fasta.gz"
     input:
         reads="{sample}.dbs-raw.fastq.gz",
         clusters="{sample}.dbs-clusters.txt.gz"
@@ -176,9 +176,9 @@ rule correct_dbs:
 rule analyze:
     """Analyzes all result files"""
     output:
-        data="{sample}.data.tsv"
+        data="{sample}.data.tsv.gz"
     input:
-        dbs_fasta="{sample}.dbs-corrected.fasta",
+        dbs_fasta="{sample}.dbs-corrected.fasta.gz",
         abc_fastas=expand("ABCs/{{sample}}.{abc}-UMI-corrected.fasta", abc=abc['Target'])
     log: "log_files/{sample}.analyze.log"
     shell:
@@ -193,9 +193,9 @@ rule analyze:
 rule merge_data:
     """Merge data from samples"""
     output:
-        data = "data.tsv"
+        data = "data.tsv.gz"
     input: 
-        data_files = expand("{sample}.data.tsv", sample=samples["Sample"])
+        data_files = expand("{sample}.data.tsv.gz", sample=samples["Sample"])
     run:
         merged_data = []
         for file in input.data_files:
@@ -210,7 +210,7 @@ rule make_report:
           html = "report.html",
           notebook = "report.ipynb",
     input:
-         data="data.tsv"
+         data="data.tsv.gz"
     log: "log_files/make_report.log"
     run:
         import pkg_resources
