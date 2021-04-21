@@ -139,7 +139,7 @@ rule abc_cluster:
     """Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)
     a empty output file will also be created."""
     output:
-        reads="ABCs/{sample}.{target}-UMI-corrected.fasta"
+        reads="ABCs/{sample}.{target}-UMI-corrected.fasta.gz"
     input:
         abc_reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
         dbs_corrected="{sample}.dbs-corrected.fasta.gz"
@@ -179,7 +179,7 @@ rule analyze:
         data="{sample}.data.tsv.gz"
     input:
         dbs_fasta="{sample}.dbs-corrected.fasta.gz",
-        abc_fastas=expand("ABCs/{{sample}}.{abc}-UMI-corrected.fasta", abc=abc['Target'])
+        abc_fastas=expand("ABCs/{{sample}}.{abc}-UMI-corrected.fasta.gz", abc=abc['Target'])
     log: "log_files/{sample}.analyze.log"
     shell:
         "dbspro analyze"
