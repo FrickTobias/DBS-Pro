@@ -24,7 +24,7 @@ install:
   - conda create --name testenv --file environment.${TRAVIS_OS_NAME}-64.lock
   - conda activate testenv
   - conda install pytest
-  - pip install --no-deps .
+  - pip install .
 
 script:
   - tests/run.sh
