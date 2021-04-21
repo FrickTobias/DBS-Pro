@@ -197,10 +197,7 @@ rule merge_data:
     input: 
         data_files = expand("{sample}.data.tsv.gz", sample=samples["Sample"])
     run:
-        merged_data = []
-        for file in input.data_files:
-            merged_data.append(pd.read_csv(file, sep="\t"))
-        merged_data = pd.concat(merged_data)
+        merged_data = pd.concat([pd.read_csv(file, sep="\t") for file in input.data_files])
         merged_data.to_csv(output.data, sep="\t", index=False)
 
 
