@@ -4,6 +4,7 @@ Combines starcode output files into raw fastq files creating error corrected fas
 import logging
 from tqdm import tqdm
 import dnaio
+from xopen import xopen
 from collections import Counter
 import os
 import statistics
@@ -67,7 +68,7 @@ def main(args):
 
 
 def parse_starcode_file(filename):
-    with open(filename, "r") as file:
+    with xopen(filename, "r") as file:
         for line in file:
             try:
                 cluster_seq, num_reads, raw_seqs_list = line.split()

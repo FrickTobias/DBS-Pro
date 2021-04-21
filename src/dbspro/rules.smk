@@ -121,7 +121,7 @@ rule demultiplex_abc:
 rule dbs_cluster:
     """Cluster DBS sequence using starcode"""
     output:
-        clusters="{sample}.dbs-clusters.txt"
+        clusters="{sample}.dbs-clusters.txt.gz"
     input:
         reads="{sample}.dbs-raw.fastq.gz"
     log: "log_files/{sample}.starcode-dbs-cluster.log"
@@ -132,8 +132,7 @@ rule dbs_cluster:
         " --print-clusters"
         " -t {threads}"
         " -d {config[dbs_cluster_dist]}"
-        " -o {output.clusters}"
-        " 2> >(tee {log} >&2)"
+        " 2> {log} | pigz > {output.clusters}"
 
 
 rule abc_cluster:
@@ -161,7 +160,7 @@ rule correct_dbs:
         reads="{sample}.dbs-corrected.fasta"
     input:
         reads="{sample}.dbs-raw.fastq.gz",
-        clusters="{sample}.dbs-clusters.txt"
+        clusters="{sample}.dbs-clusters.txt.gz"
     log: "log_files/{sample}.correctfastq-dbs.log"
     params:
         dbs = config['dbs']
