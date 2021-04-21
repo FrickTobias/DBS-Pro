@@ -3,7 +3,6 @@ from pathlib import Path
 from dbspro.cli.init import init
 from dbspro.cli.run import run
 from dbspro.cli.config import change_config
-from dbspro.cli.summary import Summary, parse_dbspro, parse_cutadapt
 
 TESTDATA_READS = Path("testdata/reads-10k-DBS.fastq.gz")
 ABC_SEQUENCES = Path("testdata/ABC-sequences.fasta")
