@@ -86,7 +86,7 @@ def run_splitcluster(
             for read in correct_umis(umis, clusterer, dist_threshold, summary):
                 output.write(read)
 
-    summary.print_stats(summary, name=__name__)
+    summary.print_stats(name=__name__)
 
 
 def correct_umis(umis, clusterer, dist_threshold, summary) -> dnaio.Sequence:

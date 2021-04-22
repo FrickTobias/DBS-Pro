@@ -15,7 +15,7 @@ import logging
 import sys
 import contextlib
 
-from dbspro.utils import print_stats
+from dbspro.utils import Summary
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def main(args):
 
     logging.info(f"Scanning tree starting from directory {args.directory.absolute()}")
 
-    summary = Summary()
+    summary = Stats()
 
     firstdir = True
     multisample = False
@@ -92,18 +92,18 @@ def main(args):
 
         in_workdir = False
 
-    print_stats(summary.counts, name=__name__)
+    summary.counts.print_stats(name=__name__)
 
     summary.write(args.output, multisample=multisample)
 
 
-class Summary:
+class Stats:
     """Class to handle all stats"""
 
     def __init__(self):
         self.data = OrderedDict()
         self.samples = list()
-        self.counts = Counter()
+        self.counts = Summary()
 
     def _add_filetype(self, filetype):
         if filetype not in self.data:
