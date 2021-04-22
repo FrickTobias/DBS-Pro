@@ -28,7 +28,7 @@ else: # For DBS-Pro input
     abs_umi_adapter = f"^{config['h1']}{dbs_n}{config['h2']}...{config['h3']}"
 
 do_sampling = "subsampled." if config["subsample"] != -1 else ""
-
+nr_samples = len(samples)
 
 rule subsample:
     """Subsample input reads to required depth"""
@@ -38,6 +38,7 @@ rule subsample:
         reads = "{sample}.fastq.gz"
     params:
         number = config["subsample"] if config["subsample"] > 0 else samples["Reads"].min()
+    threads: max(workflow.cores / nr_samples, 4)
     shell:
         "seqtk sample"
         " -s 9999"
@@ -53,7 +54,7 @@ rule extract_dbs:
     input:
         reads=f"{{sample}}.{do_sampling}fastq.gz"
     log: "log_files/{sample}.cutadapt-extract-dbs.log"
-    threads: 20
+    threads: max(workflow.cores / nr_samples, 4)
     params:
         trim=dbs_trim,
         err_rate=config["trim_err_rate"],
@@ -79,7 +80,7 @@ rule extract_abc_umi:
     input:
         reads=f"{{sample}}.{do_sampling}fastq.gz"
     log: "log_files/{sample}.cutadapt-extract-abc-umi.log"
-    threads: 20
+    threads: max(workflow.cores / nr_samples, 4)
     params:
         adapter=abs_umi_adapter,
         err_rate=config["trim_err_rate"],
@@ -125,7 +126,7 @@ rule dbs_cluster:
     input:
         reads="{sample}.dbs-raw.fastq.gz"
     log: "log_files/{sample}.starcode-dbs-cluster.log"
-    threads: 20
+    threads: max(workflow.cores / nr_samples, 4)
     shell:
         "pigz -cd {input.reads} |"
         " starcode"
