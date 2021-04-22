@@ -8,7 +8,7 @@ Output statistics based on filter.
 """
 
 import logging
-from collections import defaultdict, Counter
+from collections import defaultdict
 import os
 import sys
 
@@ -16,7 +16,7 @@ import dnaio
 import pandas as pd
 from tqdm import tqdm
 
-from dbspro.utils import print_stats
+from dbspro.utils import Summary
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ def run_analysis(
 ):
     # Barcode processing
     logger.info("Starting analysis")
-    summary = Counter()
+    summary = Summary()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
     abc_names = {file_name: os.path.basename(file_name).split('-')[0].split(".")[-1] for file_name in targets}
@@ -105,7 +105,7 @@ def run_analysis(
     logging.info("Writing output")
     df.to_csv(output, sep="\t")
 
-    print_stats(summary, name=__name__)
+    summary.print_stats(name=__name__)
 
     logger.info("Finished")
 

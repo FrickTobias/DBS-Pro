@@ -1,7 +1,7 @@
 """
 Correct FASTQ/FASTA with the corrected sequences from starcode clustering
 """
-from collections import Counter, defaultdict
+from collections import defaultdict
 import logging
 import os
 import statistics
@@ -10,7 +10,7 @@ import dnaio
 from tqdm import tqdm
 from xopen import xopen
 
-from dbspro.utils import print_stats, IUPAC_MAP
+from dbspro.utils import Summary, IUPAC_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def run_correctfastq(
     logger.info("Starting analysis")
     logger.info(f"Processing file: {corrections_file}")
 
-    summary = Counter()
+    summary = Summary()
 
     if os.stat(corrections_file).st_size == 0:
         logging.warning(f"File {corrections_file} is empty.")
@@ -76,7 +76,7 @@ def run_correctfastq(
             else:
                 summary["Reads without corrected sequence"] += 1
 
-    print_stats(summary, name=__name__)
+    summary.print_stats(name=__name__)
 
     logger.info("Finished")
 

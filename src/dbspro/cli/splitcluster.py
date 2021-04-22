@@ -1,14 +1,14 @@
 """
 Split ABC FASTQ with UMIs based on DBS cluster and cluster UMIs for each partion using UMI-tools.
 """
-from collections import Counter, defaultdict
+from collections import defaultdict
 import logging
 
 import dnaio
 from tqdm import tqdm
 from umi_tools import UMIClusterer
 
-from dbspro.utils import print_stats
+from dbspro.utils import Summary
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ def run_splitcluster(
     clustering_method: str,
 ):
     logger.info(f"Filtering reads not of length {required_length} bp.")
-    summary = Counter()
+    summary = Summary()
 
     # Read ABC fasta with UMI sequences and save read name and sequence.
     with dnaio.open(uncorrected_umis, mode="r") as file:
@@ -86,7 +86,7 @@ def run_splitcluster(
             for read in correct_umis(umis, clusterer, dist_threshold, summary):
                 output.write(read)
 
-    print_stats(summary, name=__name__)
+    summary.print_stats(summary, name=__name__)
 
 
 def correct_umis(umis, clusterer, dist_threshold, summary) -> dnaio.Sequence:
