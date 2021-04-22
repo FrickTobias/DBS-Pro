@@ -5,8 +5,7 @@ import logging
 import sys
 import pkg_resources
 from snakemake import snakemake
-
-from dbspro.utils import available_cpu_count
+from snakemake.utils import available_cpu_count
 
 logger = logging.getLogger(__name__)
 
