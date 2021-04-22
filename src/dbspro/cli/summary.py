@@ -9,7 +9,7 @@ working directories and collect data from all of them, tagging them with the dir
 """
 
 from pathlib import Path
-from collections import OrderedDict, Counter
+from collections import OrderedDict
 import os
 import logging
 import sys
