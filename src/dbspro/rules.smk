@@ -31,7 +31,7 @@ do_sampling = "subsampled." if config["subsample"] != -1 else ""
 nr_samples = len(samples)
 
 rule subsample:
-    """Subsample input reads to required depth"""
+    """Subsample input reads to required depth if needed"""
     output:
         reads = "{sample}.subsampled.fastq.gz"
     input:
@@ -39,12 +39,18 @@ rule subsample:
     params:
         number = config["subsample"] if config["subsample"] > 0 else samples["Reads"].min()
     threads: max(workflow.cores / nr_samples, 4)
-    shell:
-        "seqtk sample"
-        " -s 9999"
-        " {input.reads}"
-        " {params.number}"
-        " | pigz > {output.reads}"
+    run:
+        # Only subsample file if needed
+        if samples.loc[wildcards.sample, "Reads"] > params.number:
+            shell(
+                "seqtk sample"
+                " -s 9999"
+                " {input.reads}"
+                " {params.number}"
+                " | pigz > {output.reads}"
+            )
+        else:
+            shell("ln -s {input.reads} {output.reads}")
 
 
 rule extract_dbs:
