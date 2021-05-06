@@ -15,6 +15,17 @@ def test_init(tmpdir):
     init(workdir, [TESTDATA_READS], ABC_SEQUENCES)
 
 
+def test_init_from_csv(tmpdir):
+    workdir = tmpdir / "analysis"
+    sample_name = "mysample"
+    sample_csv = tmpdir / "samples.csv"
+    with sample_csv.open(mode="w") as f:
+        print(f"{TESTDATA_READS},{sample_name}", file=f)
+
+    init(workdir, [], ABC_SEQUENCES, sample_csv=sample_csv)
+    assert (workdir / sample_name + ".fastq.gz").exists()
+
+
 def test_change_config(tmpdir):
     workdir = tmpdir / "analysis"
     init(workdir, [TESTDATA_READS], ABC_SEQUENCES)

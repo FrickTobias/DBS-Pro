@@ -5,7 +5,7 @@ rm -rf outdir
 
 pytest -v tests/
 
-dbspro init testdata/reads-10k-DBS.fastq.gz outdir --abc testdata/ABC-sequences.fasta
+dbspro init outdir testdata/reads-10k-DBS.fastq.gz --abc testdata/ABC-sequences.fasta
 
 pushd outdir
 

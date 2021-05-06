@@ -8,7 +8,7 @@ import sys
 import dnaio
 from pathlib import Path
 from importlib_resources import read_binary
-from typing import List
+from typing import List, Iterator, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +20,15 @@ SAMPLE_FILE_NAME = "samples.tsv"
 
 def add_arguments(parser):
     parser.add_argument(
-        "reads", nargs="+", type=Path, help="Read file(s) (.fastq.gz)"
+        "directory", type=Path, help="New analysis directory to create"
     )
     parser.add_argument(
-        "directory", type=Path, help="New analysis directory to create"
+        "reads", nargs="*", type=Path,
+        help="Read file(s) (.fastq.gz). Can also be supplied through '-s/--sample-csv'"
+    )
+    parser.add_argument(
+        "-s", "--sample-csv", type=Path,
+        help="Path to CSV with one sample per line. Line fromat: <path/to/sample.fastq.gz>,<sample_name>."
     )
     parser.add_argument(
         "--abc", required=True, type=Path, metavar="ABC-sequences.fasta",
@@ -34,15 +39,23 @@ def add_arguments(parser):
 
 
 def main(args):
-    init(args.directory, args.reads, args.abc)
+    init(args.directory, args.reads, args.abc, args.sample_csv)
 
 
-def init(directory: Path, reads: List[Path], abc: Path):
+def init(directory: Path, reads: List[Path], abc: Path, sample_csv: str = None):
     if " " in str(directory):
         logger.error("The name of the analysis directory must not contain spaces")
         sys.exit(1)
 
-    create_and_populate_analysis_directory(directory, reads, abc)
+    if reads != [] and sample_csv is not None:
+        logger.error("Only provide a sample CSV or paths to samples, not both.")
+        sys.exit(1)
+
+    if reads == [] and sample_csv is None:
+        logger.error("Provide a sample CSV or paths to reads.")
+        sys.exit(1)
+
+    create_and_populate_analysis_directory(directory, reads, abc, sample_csv)
 
     logger.info(f"Directory {directory} initialized.")
     logger.info(
@@ -53,7 +66,7 @@ def init(directory: Path, reads: List[Path], abc: Path):
     )
 
 
-def create_and_populate_analysis_directory(directory: Path, reads: List[Path], abc_file: Path):
+def create_and_populate_analysis_directory(directory: Path, reads: List[Path], abc_file: Path, sample_csv: Path):
     try:
         directory.mkdir()
     except OSError as e:
@@ -75,16 +88,35 @@ def create_and_populate_analysis_directory(directory: Path, reads: List[Path], a
 
             open_out.write(abc)
 
+    # Symlink sample FASTQs into workdir and create TSV with sample info
     with (directory / SAMPLE_FILE_NAME).open(mode="w") as f:
-        print("Sample", "Reads", sep="\t", file=f)
-        for file in reads:
-            name = file.name.replace(".fastq.gz", "").replace("-", "_").replace(".", "_")
-            logger.info(f"Renaming {file.name} to {name}")
+        print("Sample", "Reads", "FastqPath", sep="\t", file=f)
+        for file, name in get_path_and_name(reads, sample_csv):
+            logger.info(f"File {file.name} given sample name '{name}'")
             create_symlink(file, directory, name + ".fastq.gz")
-            print(name, count_reads(file), sep="\t", file=f)
+            print(name, count_reads(file), file.resolve(), sep="\t", file=f)
 
 
-def fail_if_inaccessible(path):
+def get_path_and_name(reads: List[Path], sample_csv: Path) -> Iterator[Tuple[Path, str]]:
+    if reads != []:
+        for file in reads:
+            name = fix_name(file.name)
+            yield file, name
+    else:
+        with sample_csv.open() as f:
+            for line in f:
+                file, name = line.strip().split(",", maxsplit=1)
+                name = fix_name(name)
+                file = Path(file)
+                assert file.exists()
+                yield file, name
+
+
+def fix_name(name: str) -> str:
+    return name.replace(".fastq.gz", "").replace("-", "_").replace(".", "_")
+
+
+def fail_if_inaccessible(path: Path):
     try:
         with path.open():
             pass
@@ -93,7 +125,7 @@ def fail_if_inaccessible(path):
         sys.exit(1)
 
 
-def create_symlink(readspath, dirname, target):
+def create_symlink(readspath: Path, dirname: Path, target: str):
     if not os.path.isabs(readspath):
         src = os.path.relpath(readspath, dirname)
     else:
