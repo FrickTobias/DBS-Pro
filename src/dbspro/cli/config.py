@@ -8,13 +8,17 @@ Update configuration file. If no --set option is given the current settings are 
 import sys
 import os
 import logging
+from typing import List, Tuple, Dict
+from pathlib import Path
+
 from ruamel.yaml import YAML
 from snakemake.utils import validate
 import pkg_resources
 
 from dbspro.utils import get_abcs
+
 logger = logging.getLogger(__name__)
-DEFAULT_PATH = "dbspro.yaml"
+DEFAULT_PATH = Path("dbspro.yaml")
 SCHEMA_FILE = "config.schema.yaml"
 
 
@@ -27,13 +31,13 @@ def main(args):
         print_config(args.file)
 
 
-def print_config(file):
+def print_config(file: Path):
     configs, yaml = load_yaml(file)
     print(f"--- CONFIGS IN: {file} ---")
     yaml.dump(configs, stream=sys.stdout)
 
 
-def print_construct(file):
+def print_construct(file: Path):
     configs, yaml = load_yaml(file)
 
     # Get handles
@@ -66,7 +70,7 @@ class Handle:
         return f"|{string.center(self.length-2, ' ')}|"
 
 
-def change_config(filename, changes_set):
+def change_config(filename: Path, changes_set: List[Tuple[str, str]]):
     """
     Change config YAML file at filename using the changes_set key-value pairs.
     :param filename: string with path to YAML config file to change.
@@ -90,7 +94,7 @@ def change_config(filename, changes_set):
     os.rename(tmpfile, filename)
 
 
-def update_configs(configs, key, value):
+def update_configs(configs: Dict[str, str], key: str, value: str):
     """
     Check key and value before updating configs
     """
@@ -105,7 +109,7 @@ def update_configs(configs, key, value):
     configs[key] = value
 
 
-def load_yaml(filename):
+def load_yaml(filename: Path) -> Tuple[Dict[str, str], YAML]:
     """
     Load YAML file and return the yaml object and data.
     :param filename: Path to YAML file
@@ -121,7 +125,7 @@ def add_arguments(parser):
     parser.add_argument("-s", "--set", nargs=2, metavar=("KEY", "VALUE"), action="append",
                         help="Set KEY to VALUE. Use KEY.SUBKEY[.SUBSUBKEY...] for nested keys. For empty values "
                              "write 'null'. Can be given multiple times.")
-    parser.add_argument("--file", default=DEFAULT_PATH,
+    parser.add_argument("--file", default=DEFAULT_PATH, type=Path,
                         help="Configuration file to modify. Default: %(default)s in current directory.")
     parser.add_argument("-p", "--print-construct", default=False, action="store_true",
                         help="Show construct layout with current handles inplace.")

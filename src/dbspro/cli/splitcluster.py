@@ -3,8 +3,11 @@ Split ABC FASTQ with UMIs based on DBS cluster and cluster UMIs for each partion
 """
 from collections import defaultdict
 import logging
+from pathlib import Path
+from typing import Dict, List, Iterable, Iterator
 
 import dnaio
+from dnaio import Sequence
 from tqdm import tqdm
 from umi_tools import UMIClusterer
 
@@ -15,15 +18,15 @@ logger = logging.getLogger(__name__)
 
 def add_arguments(parser):
     parser.add_argument(
-        "corrected_dbs_fasta",
+        "corrected_dbs_fasta", type=Path,
         help="Input FASTA with corrected DBS sequences"
     )
     parser.add_argument(
-        "uncorrected_umi_fastq",
+        "uncorrected_umi_fastq", type=Path,
         help="Input FASTQ for demultiplexed ABC with uncorrected UMI sequences."
     )
     parser.add_argument(
-        "-o", "--output-fasta", default="-", type=str,
+        "-o", "--output-fasta", default="-", type=Path,
         help="Output FASTA for demultiplexed ABC with corrected UMI sequences. Default: write to stdout"
     )
     parser.add_argument(
@@ -89,21 +92,24 @@ def run_splitcluster(
     summary.print_stats(name=__name__)
 
 
-def correct_umis(umis, clusterer, dist_threshold, summary) -> dnaio.Sequence:
+AliasType = Dict[str, List[str]]
+
+
+def correct_umis(umis: AliasType, clusterer: UMIClusterer, threshold: int, summary: Summary) -> Iterator[Sequence]:
     umi_counts = {bytes(umi, encoding='utf-8'): len(reads) for umi, reads in umis.items()}
     summary["Total UMIs"] += len(umi_counts)
 
-    for cluster in clusterer(umi_counts, threshold=dist_threshold):
+    for cluster in clusterer(umi_counts, threshold=threshold):
         summary["Total clustered UMIs"] += 1
         seqs = [seq.decode("utf-8") for seq in cluster]
         canonical_sequnce = seqs[0]
 
         for seq in seqs:
             for read_name in umis[seq]:
-                yield dnaio.Sequence(read_name, canonical_sequnce)
+                yield Sequence(read_name, canonical_sequnce)
 
 
-def assign_to_dbs(file, name_to_umi_seq, summary):
+def assign_to_dbs(file: Iterable[Sequence], name_to_umi: Dict[str, str], summary: Summary) -> Dict[str, AliasType]:
     """
     Create structure for storing DBS, UMI and read name
 
@@ -121,12 +127,12 @@ def assign_to_dbs(file, name_to_umi_seq, summary):
     for read in tqdm(file, desc="Assigning DBS"):
         summary["DBS reads"] += 1
         # Skip reads that are not to be clustered
-        if read.name not in name_to_umi_seq:
+        if read.name not in name_to_umi:
             continue
 
         # Get sequences
         dbs = read.sequence
-        umi = name_to_umi_seq[read.name]
+        umi = name_to_umi[read.name]
 
         if umi not in dbs_groups[dbs]:
             dbs_groups[dbs][umi] = list()

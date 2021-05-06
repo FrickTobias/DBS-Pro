@@ -4,6 +4,7 @@ Utility functions
 from collections import Counter
 import logging
 import sys
+from typing import Set
 
 import dnaio
 import pandas as pd
@@ -28,7 +29,7 @@ IUPAC_MAP = {
     'N': {'G', 'C', 'T', 'A'}}
 
 
-def get_abcs(abc_fasta_file):
+def get_abcs(abc_fasta_file: str) -> pd.DataFrame:
     """
     Helper function to get ABC sequences and names into pandas dataframe
     :param abc_fasta_file:
@@ -53,7 +54,7 @@ def get_abcs(abc_fasta_file):
 
 class Summary(Counter):
 
-    def print_stats(self, name=None, value_width=15, print_to=sys.stderr):
+    def print_stats(self, name: str = None, value_width: int = 15, print_to=sys.stderr):
         """
         Prints stats in nice table with two column for the key and value pairs in
         summary
@@ -82,6 +83,6 @@ class Summary(Counter):
         print("="*width, file=print_to)
 
 
-def jaccard_index(set1, set2) -> float:
+def jaccard_index(set1: Set[str], set2: Set[str]) -> float:
     """Calculate the Jaccard Index metric between two sets"""
     return len(set1 & set2) / len(set1 | set2)

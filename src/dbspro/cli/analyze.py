@@ -11,6 +11,8 @@ import logging
 from collections import defaultdict
 import os
 import sys
+from typing import List, Dict, Tuple
+from pathlib import Path
 
 import dnaio
 import pandas as pd
@@ -23,16 +25,16 @@ logger = logging.getLogger(__name__)
 
 def add_arguments(parser):
     parser.add_argument(
-        "dbs",
+        "dbs", type=Path,
         help="Path to FASTA with error-corrected DBS barcode sequences."
     )
     parser.add_argument(
-        "targets", nargs="+",
+        "targets", nargs="+", type=Path,
         help="Path to directory containing error-corrected target (ABC) FASTAs with UMI "
              "(unique molecular identifier) sequences."
     )
     parser.add_argument(
-        "-o", "--output", default=sys.stdout,
+        "-o", "--output", default=sys.stdout, type=Path,
         help="Output TSV. Defualt: %(default)s"
     )
     parser.add_argument(
@@ -52,7 +54,7 @@ def main(args):
 
 def run_analysis(
     dbs: str,
-    targets: None,
+    targets: List[str],
     output: str,
     filter: int
 ):
@@ -110,15 +112,12 @@ def run_analysis(
     logger.info("Finished")
 
 
-def get_dbs_headers(file):
-    dbs = dict()
+def get_dbs_headers(file: Path) -> Dict[str, str]:
     with dnaio.open(file, mode="r", fileformat="fasta") as reader:
-        for read in tqdm(reader, desc="Parsing DBS reads"):
-            dbs[read.name] = read.sequence
-    return dbs
+        return {r.name: r.sequence for r in tqdm(reader, desc="Parsing DBS reads")}
 
 
-def output_stats(df_filt, abcs):
+def output_stats(df_filt: pd.DataFrame, abcs: List[str]):
     # Perpare data for analysis
     data_to_print = list()
     for abc in abcs:
@@ -142,7 +141,7 @@ def output_stats(df_filt, abcs):
     sys.stderr.write("\n")
 
 
-def n50_counter(input_list):
+def n50_counter(input_list: List[int]) -> int:
     """
     Calculates N50 for a given list
     :param input_list: list with numbers (list)
@@ -158,7 +157,10 @@ def n50_counter(input_list):
             return num
 
 
-def make_dataframes(results, limit, sample_name):
+AliasType = Dict[str, Dict[str, Dict[str, Dict[str, int]]]]
+
+
+def make_dataframes(results: AliasType, limit: int, sample_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # Generate filtered and unfiltered dataframes from data.
     output = list()
     output_filt = list()

@@ -5,6 +5,8 @@ from collections import defaultdict
 import logging
 import os
 import statistics
+from pathlib import Path
+from typing import Iterator, Tuple, List, Set, Dict
 
 import dnaio
 from tqdm import tqdm
@@ -17,16 +19,16 @@ logger = logging.getLogger(__name__)
 
 def add_arguments(parser):
     parser.add_argument(
-        "input",
+        "input", type=Path,
         help="FASTQ/FASTA with uncorrected sequences."
     )
     parser.add_argument(
-        "corrections",
+        "corrections", type=Path,
         help="Starcode output in format, tab-separate entries: <corrected sequnence>, <read count>, <comma-separated"
              "uncorrected sequences>."
     )
     parser.add_argument(
-        "-o", "--output-fasta",
+        "-o", "--output-fasta", type=Path,
         help="Output FASTA with corrected sequences."
     )
     parser.add_argument(
@@ -81,7 +83,7 @@ def run_correctfastq(
     logger.info("Finished")
 
 
-def parse_starcode_file(filename):
+def parse_starcode_file(filename: Path) -> Iterator[Tuple[str, int, List[str]]]:
     with xopen(filename, "r") as file:
         for line in file:
             try:
@@ -93,8 +95,8 @@ def parse_starcode_file(filename):
             yield cluster_seq, int(num_reads), raw_seqs
 
 
-def get_corrections(corrections_file, pattern, summary):
-    corr_map = dict()
+def get_corrections(corrections_file: Path, pattern: List[Set[str]], summary: Summary) -> Dict[str, str]:
+    corr_map = {}
     stats = defaultdict(list)
     for cluster_seq, num_reads, raw_seqs in tqdm(parse_starcode_file(corrections_file), desc="Parsing clusters"):
         summary["Clusters"] += 1
@@ -113,7 +115,7 @@ def get_corrections(corrections_file, pattern, summary):
     return corr_map
 
 
-def match_pattern(sequence, pattern):
+def match_pattern(sequence: str, pattern: List[Set[str]]) -> bool:
     if len(sequence) != len(pattern):
         return False
 

@@ -4,6 +4,9 @@ Run DPS-Pro pipeline
 import logging
 import sys
 import pkg_resources
+from typing import List, Optional
+from pathlib import Path
+
 from snakemake import snakemake
 from snakemake.utils import available_cpu_count
 
@@ -73,10 +76,10 @@ def run(
         unlock: bool = False,
         printdag: bool = False,
         printfilegraph: bool = False,
-        targets=None,
+        targets: Optional[List[str]] = None,
         delete_all_output: bool = False,
-        force_run=None,
-        workdir=None,
+        force_run: Optional[List[str]] = None,
+        workdir: Optional[Path] = None,
 ):
     # snakemake sets up its own logging, and this cannot be easily changed
     # (setting keep_logger=True crashes), so remove our own log handler
