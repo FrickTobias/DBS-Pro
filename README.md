@@ -17,33 +17,33 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 
 1. Clone the git repository.
 
-```{bash}
-git clone https://github.com/FrickTobias/DBS-Pro
-```
+    ```{bash}
+    git clone https://github.com/FrickTobias/DBS-Pro
+    ```
 
 2. Move into the git folder and install all dependencies in a conda environment.
 
-```{bash}
-cd DBS-Pro
-conda env create -n dbspro -f DBS-Pro/environment.yml
-```
+    ```{bash}
+    cd DBS-Pro
+    conda env create -n dbspro -f DBS-Pro/environment.yml
+    ```
 
 3. Activate the conda environment.
 
-```{bash}
-conda activate dbspro
-```
+    ```{bash}
+    conda activate dbspro
+    ```
 
 4. Install the dbspro package.
 
-```{bash}
-pip install -e .
-```
+    ```{bash}
+    pip install -e .
+    ```
 
 ## Usage
 
 Prepare a FASTA with each of the antibody barcodes used in your experiment. The entry name will be used to define the
-targets. Also make sure that each sequence is prepended with `^`,this is used for demultiplexing. See the example FASTA below:
+targets. Also make sure that each sequence is prepended with `^`, this is used for demultiplexing. See the example FASTA below:
 
 ```{bash}
 >ABC01
@@ -89,6 +89,7 @@ dbspro run
 For more information on how to run use `dbspro run -h`.
 
 ## Publications
+
 Checkout version [v0.1](https://github.com/FrickTobias/DBS-Pro/tree/v0.1) for the pipeline used in:
 
-[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates. Bioconjugate chemistry.](https://pubs.acs.org/doi/abs/10.1021/acs.bioconjchem.9b00548).
+[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates. Bioconjugate chemistry](https://pubs.acs.org/doi/abs/10.1021/acs.bioconjchem.9b00548).
