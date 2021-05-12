@@ -8,16 +8,17 @@ import importlib
 from argparse import ArgumentParser
 
 import dbspro.cli as cli_package
+from dbspro import __version__
 
 logger = logging.getLogger(__name__)
 
 
-def main() -> int:
+def main(commandline_args=None) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(module)s - %(levelname)s: %(message)s",
                         datefmt='%Y-%m-%d %H:%M:%S')
     parser = ArgumentParser(description=__doc__, prog="dbspro")
-    parser.add_argument("--version", action="version", version="%(prog)s 0.1")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     subparsers = parser.add_subparsers()
 
     # Import each module that implements a subcommand and add a subparser for it.
@@ -33,7 +34,7 @@ def main() -> int:
         subparser.set_defaults(module=module)
         module.add_arguments(subparser)
 
-    args = parser.parse_args()
+    args = parser.parse_args(commandline_args)
     if not hasattr(args, "module"):
         parser.error("Please provide the name of a subcommand to run")
     else:

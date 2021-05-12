@@ -3,3 +3,4 @@ __pycache__/
 /src/DBS-Pro.egg-info/
 
 .idea
+/src/dbspro/_version.py

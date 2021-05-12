@@ -1,5 +1,7 @@
 from pathlib import Path
+import pytest
 
+from dbspro.__main__ import main as dbspro_main
 from dbspro.cli.init import init
 from dbspro.cli.run import run
 from dbspro.cli.config import change_config
@@ -38,3 +40,9 @@ def test_output_files(tmpdir, targets=["report.ipynb", "data.tsv.gz"]):
     run(targets=targets, workdir=workdir)
     for target in targets:
         assert Path(f"{workdir}/{target}").is_file()
+
+
+def test_version_exit_code_zero():
+    with pytest.raises(SystemExit) as e:
+        dbspro_main(["--version"])
+    assert e.value.code == 0
