@@ -37,8 +37,10 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 4. Install the dbspro package.
 
     ```{bash}
-    pip install -e .
+    pip install .
     ```
+
+For development, please use `pip install -e .[dev]`.
 
 ## Usage
 

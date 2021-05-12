@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name="dbspro",
-    author="Tobias Frick",
+    author="Tobias Frick, Pontus Höjer",
     url="https://github.com/TobiasFrick/DBS-Pro/",
     description="DBS-Pro pipeline",
     long_description=long_description,
@@ -23,7 +23,10 @@ setup(
         "umi_tools",
     ],
     extras_require={
-        "dev": ["flake8"],
+        "dev": [
+            "flake8",
+            "pytest",
+            ],
     },
     package_data={"dbspro": ["rules.smk", "report_template.ipynb", "dbspro.yaml", "config.schema.yaml",
                              "ABC-sequences.fasta"]},

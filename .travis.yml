@@ -23,8 +23,7 @@ before_install:
 install:
   - conda create --name testenv --file environment.${TRAVIS_OS_NAME}-64.lock
   - conda activate testenv
-  - conda install pytest
-  - pip install .
+  - pip install .[dev]
 
 script:
   - tests/run.sh
@@ -40,4 +39,6 @@ jobs:
       python: "3.6"
       before_install:
       install: python3 -m pip install flake8
-      script: flake8 src/ tests/
+      script: 
+        - flake8 src/ tests/
+        - flake8 --select=W292 --filename '*.yaml,*.yml'
