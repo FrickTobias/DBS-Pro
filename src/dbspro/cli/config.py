@@ -4,7 +4,6 @@ Update configuration file. If no --set option is given the current settings are 
 # Copied & modified from BLR github 16/12 - 2019, https://github.com/FrickTobias/BLR
 # Script is based on repos NBISSweden/IgDisover config script.
 # Link https://github.com/NBISweden/IgDiscover/blob/master/src/igdiscover/cli/config.py
-
 import sys
 import os
 import logging
@@ -21,9 +20,28 @@ logger = logging.getLogger(__name__)
 DEFAULT_PATH = Path("dbspro.yaml")
 SCHEMA_FILE = "config.schema.yaml"
 
+STANDARD_CONSTRUCTS = {
+    "dbspro_v1": [
+        ("h1", "CGATGCTAATCAGATCA"),
+        ("h2", "AAGAGTCAATAGACCATCTAACAGGATTCAGGTA"),
+        ("h3", "TTATATCACGACAAGAG"),
+    ],
+    "dbspro_v2": [
+        ("h1", "CAGTCTGAGCGGTTCAACAGG"),
+        ("h2", "GCGGTCGTGCTGTATTGTCTCCCACCATGACTAACGCGCTTG"),
+        ("h3", "CACCTGACGCACTGAATACGC"),
+    ],
+    "pba": [
+        ("h1", "null"),
+        ("h2", "ACCTGAGACATCATAATAGCA"),
+        ("h3", "CATTACTAGGAATCACACGCAGAT"),
+    ]
+}
+
 
 def main(args):
-    if args.set:
+    if args.set or args.construct:
+        args.set.extend(STANDARD_CONSTRUCTS[args.construct])
         change_config(args.file, args.set)
     elif args.print_construct:
         print_construct(args.file)
@@ -49,7 +67,7 @@ def print_construct(file: Path):
     abc = Handle("ABC", "X"*len(abcs["Sequence"][0].strip("^")))
     h3 = Handle("H3", configs["h3"])
 
-    handles = [h1, dbs, h2, abc, umi, h3] if configs["h1"] is not None else [h1, dbs, h2, abc, umi, h3]
+    handles = [h1, dbs, h2, abc, umi, h3] if configs["h1"] is not None else [dbs, h2, abc, umi, h3]
 
     print(
         f"--- CONSTRUCT LAYOUT (Total length = {sum(h.length for h in handles)}) ---\n"
@@ -88,7 +106,7 @@ def change_config(filename: Path, changes_set: List[Tuple[str, str]]):
     validate(configs, schema_path)
 
     # Write first to temporary file then overwrite filename.
-    tmpfile = filename + ".tmp"
+    tmpfile = str(filename) + ".tmp"
     with open(tmpfile, "w") as file:
         yaml.dump(configs, stream=file)
     os.rename(tmpfile, filename)
@@ -122,10 +140,20 @@ def load_yaml(filename: Path) -> Tuple[Dict[str, str], YAML]:
 
 
 def add_arguments(parser):
-    parser.add_argument("-s", "--set", nargs=2, metavar=("KEY", "VALUE"), action="append",
-                        help="Set KEY to VALUE. Use KEY.SUBKEY[.SUBSUBKEY...] for nested keys. For empty values "
-                             "write 'null'. Can be given multiple times.")
-    parser.add_argument("--file", default=DEFAULT_PATH, type=Path,
-                        help="Configuration file to modify. Default: %(default)s in current directory.")
-    parser.add_argument("-p", "--print-construct", default=False, action="store_true",
-                        help="Show construct layout with current handles inplace.")
+    parser.add_argument(
+        "-s", "--set", nargs=2, metavar=("KEY", "VALUE"), action="append", default=[],
+        help="Set KEY to VALUE. Use KEY.SUBKEY[.SUBSUBKEY...] for nested keys. For empty values "
+             "write 'null'. Can be given multiple times."
+    )
+    parser.add_argument(
+        "--file", default=DEFAULT_PATH, type=Path,
+        help="Configuration file to modify. Default: %(default)s in current directory."
+    )
+    parser.add_argument(
+        "-p", "--print-construct", default=False, action="store_true",
+        help="Show construct layout with current handles inplace."
+    )
+    parser.add_argument(
+        "-c", "--construct", choices=list(STANDARD_CONSTRUCTS),
+        help="Setup one of the standard contructs."
+    )

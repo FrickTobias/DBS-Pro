@@ -90,8 +90,45 @@ dbspro run
 
 For more information on how to run use `dbspro run -h`.
 
+### Standard constructs
+
+The most common construct are included as presets which can be initialized using the `-c/--construct` parameter in `dbspro config`. Currently available constructs include:
+
+#### dbspro_v1
+
+```{bash}
+Sequence: 5'-CGATGCTAATCAGATCA BDVHBDVHBDVHBDVHBDVH AAGAGTCAATAGACCATCTAACAGGATTCAGGTA XXXXX NNNNNN TTATATCACGACAAGAG-3'
+Name:        |       H1      | |       DBS        | |               H2               | |ABC| |UMI | |       H3      |
+Size (bp):   |       17      | |        20        | |               34               | | 5 | | 6  | |       17      |
+```
+
+This is the DBS-Pro construct used in the publication [Stiller et al. 2019][1].
+
+#### dbspro_v2
+
+```{bash}
+Sequence: 5'-CAGTCTGAGCGGTTCAACAGG BDVHBDVHBDVHBDVHBDVH GCGGTCGTGCTGTATTGTCTCCCACCATGACTAACGCGCTTG XXXXX NNNNNN CACCTGACGCACTGAATACGC-3'
+Name:        |         H1        | |       DBS        | |                   H2                   | |ABC| |UMI | |         H3        |
+Size (bp):   |         21        | |        20        | |                   42                   | | 5 | | 6  | |         21        |
+```
+
+This is the DBS-Pro construct currently in use.
+
+#### pba
+
+```{bash}
+Sequence: 5'-BDVHBDVHBDVHBDVHBDVH ACCTGAGACATCATAATAGCA XXXXX NNNNNN CATTACTAGGAATCACACGCAGAT-3'
+Name:        |       DBS        | |         H2        | |ABC| |UMI | |          H3          |
+Size (bp):   |        20        | |         21        | | 5 | | 6  | |          24          |
+```
+
+This is the construct used in the article [Wu et al. 2019][2] which introduces the Proximity Barcoding Assay (PBA).
+
 ## Publications
 
 Checkout version [v0.1](https://github.com/FrickTobias/DBS-Pro/tree/v0.1) for the pipeline used in:
 
-[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates. Bioconjugate chemistry](https://pubs.acs.org/doi/abs/10.1021/acs.bioconjchem.9b00548).
+[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates. Bioconjugate chemistry][1].
+
+[1]: https://pubs.acs.org/doi/abs/10.1021/acs.bioconjchem.9b00548 "Stiller et al. 2019"
+[2]: https://doi.org/10.1038/s41467-019-11486-1 "Wu et al. 2019"
