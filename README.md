@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FrickTobias/DBS-Pro.svg?branch=master)](https://travis-ci.org/FrickTobias/DBS-Pro)
+[![Build Status](https://travis-ci.org/FrickTobias/DBS-Pro.svg?branch=master)](https://travis-ci.org/FrickTobias/DBS-Pro) <!-- markdownlint-disable MD041-->
 
 # DBS-Pro Analysis
 
@@ -26,10 +26,11 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
     ```{bash}
     cd DBS-Pro
     ```
+
     For reproducibility the `*.lock` files are used.
-    
+
     2.1. For OSX use:
-    
+
     ```{bash}
     conda create --name dbspro --file environment.osx-64.lock
     ```
@@ -39,14 +40,15 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
     ```{bash}
     conda create --name dbspro --file environment.linux-64.lock
     ```
-    
+
     2.3. Using flexible dependancies (Not recommended)
-    
+
     ```{bash}
     conda env create --name dbspro --file environment.yml
     ```
+
     This option will likely introduce newer versions the softwares
-    and depenencies which have not yet been tested. 
+    and depenencies which have not yet been tested.
 
 3. Activate the conda environment.
 
