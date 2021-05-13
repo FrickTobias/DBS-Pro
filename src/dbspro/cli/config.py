@@ -25,16 +25,19 @@ STANDARD_CONSTRUCTS = {
         ("h1", "CGATGCTAATCAGATCA"),
         ("h2", "AAGAGTCAATAGACCATCTAACAGGATTCAGGTA"),
         ("h3", "TTATATCACGACAAGAG"),
+        ("dbs", "BDVHBDVHBDVHBDVHBDVH"),
     ],
     "dbspro_v2": [
         ("h1", "CAGTCTGAGCGGTTCAACAGG"),
         ("h2", "GCGGTCGTGCTGTATTGTCTCCCACCATGACTAACGCGCTTG"),
         ("h3", "CACCTGACGCACTGAATACGC"),
+        ("dbs", "BDVHBDVHBDVHBDVHBDVH"),
     ],
     "pba": [
         ("h1", "null"),
         ("h2", "ACCTGAGACATCATAATAGCA"),
         ("h3", "CATTACTAGGAATCACACGCAGAT"),
+        ("dbs", "NNNNNNNNNNNNNNN"),
     ]
 }
 

@@ -117,9 +117,9 @@ This is the DBS-Pro construct currently in use.
 #### pba
 
 ```{bash}
-Sequence: 5'-BDVHBDVHBDVHBDVHBDVH ACCTGAGACATCATAATAGCA XXXXX NNNNNN CATTACTAGGAATCACACGCAGAT-3'
-Name:        |       DBS        | |         H2        | |ABC| |UMI | |          H3          |
-Size (bp):   |        20        | |         21        | | 5 | | 6  | |          24          |
+Sequence: 5'-NNNNNNNNNNNNNNN ACCTGAGACATCATAATAGCA XXXXX NNNNNN CATTACTAGGAATCACACGCAGAT-3'
+Name:        |     DBS     | |         H2        | |ABC| |UMI | |          H3          |
+Size (bp):   |      15     | |         21        | | 5 | | 6  | |          24          |
 ```
 
 This is the construct used in the article [Wu et al. 2019][2] which introduces the Proximity Barcoding Assay (PBA).
