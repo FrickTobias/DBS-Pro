@@ -25,8 +25,28 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
 
     ```{bash}
     cd DBS-Pro
-    conda env create -n dbspro -f DBS-Pro/environment.yml
     ```
+    For reproducibility the `*.lock` files are used.
+    
+    2.1. For OSX use:
+    
+    ```{bash}
+    conda create --name dbspro --file environment.osx-64.lock
+    ```
+
+    2.2. For LINUX use:
+
+    ```{bash}
+    conda create --name dbspro --file environment.linux-64.lock
+    ```
+    
+    2.3. Using flexible dependancies (Not recommended)
+    
+    ```{bash}
+    conda env create --name dbspro --file environment.yml
+    ```
+    This option will likely introduce newer versions the softwares
+    and depenencies which have not yet been tested. 
 
 3. Activate the conda environment.
 
@@ -40,7 +60,7 @@ First, make sure [conda](https://docs.conda.io/projects/conda/en/latest/user-gui
     pip install .
     ```
 
-For development, please use `pip install -e .[dev]`.
+    For development, please use `pip install -e .[dev]`.
 
 ## Usage
 
