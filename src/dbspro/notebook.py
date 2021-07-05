@@ -12,8 +12,9 @@ import numpy as np
 from itertools import combinations
 from umi_tools import UMIClusterer
 from typing import Union
-
+from scipy.stats.mstats import gmean
 from tqdm.notebook import tqdm
+
 from dbspro.utils import jaccard_index
 
 
@@ -175,3 +176,90 @@ def filter_shared_umis(df: pd.DataFrame, threshold, opr=operator.gt) -> pd.DataF
 
 
 pd.DataFrame.filter_shared_umis = filter_shared_umis
+
+###################
+# TRANSFORMATIONS #
+###################
+
+
+def to_matrix(df: pd.DataFrame, norm: bool = False, on_cells: bool = False, qc: bool = False) -> pd.DataFrame:
+    """Convert from long (raw) fromat to wide format. Each row is a barcode with the corresponding UMI count for
+    each target.
+    """
+    matrix = df.groupby(["Barcode", "Target"], as_index=False)["UMI"].count().set_index("Barcode")\
+        .pivot(columns="Target", values="UMI").fillna(0)
+
+    if norm:
+        matrix = clr_normalize(matrix, on_cells=on_cells)
+
+    if qc:
+        matrix._qc(inplace=True)
+        map_rc = {bc: group["ReadCount"].sum() for bc, group in df.groupby("Barcode")}
+        matrix["total_reads"] = matrix.index.to_series().map(map_rc)
+
+    return matrix
+
+
+pd.DataFrame.to_matrix = to_matrix
+
+
+def to_readmatrix(df: pd.DataFrame, norm: bool = False, on_cells: bool = False, qc: bool = False) -> pd.DataFrame:
+    """Convert from long (raw) fromat to wide format. Each row is a barcode with the corresponding read count for
+    each target.
+    """
+    matrix = df.groupby(["Barcode", "Target"], as_index=False)["ReadCount"].sum().set_index("Barcode")\
+        .pivot(columns="Target", values="ReadCount").fillna(0)
+    if norm:
+        matrix = clr_normalize(matrix, on_cells=on_cells)
+
+    if qc:
+        matrix._qc(inplace=True)
+        map_rc = {bc: group["ReadCount"].sum() for bc, group in df.groupby("Barcode")}
+        matrix["total_reads"] = matrix.index.to_series().map(map_rc)
+
+    return matrix
+
+
+pd.DataFrame.to_readmatrix = to_readmatrix
+
+
+def _qc(df, targets=None, inplace=False):
+    if inplace:
+        matrix = df
+    else:
+        matrix = df.copy()
+
+    if targets is None:
+        targets = matrix.select_dtypes(include=np.number).columns.tolist()
+
+    matrix["total_count"] = matrix.loc[:, targets].sum(axis=1)
+    matrix["nr_targets"] = matrix.loc[:, targets].gt(0).sum(axis=1)
+    return matrix
+
+
+pd.DataFrame._qc = _qc
+
+##################
+# NORMALIZATIONS #
+##################
+
+
+def clr_normalize(matrix: pd.DataFrame, columns=None, on_cells: bool = False) -> pd.DataFrame:
+    """CLR normalisation"""
+    matrix_copy = matrix.copy()
+
+    if not columns:
+        columns = matrix_copy.select_dtypes(include=np.number).columns.tolist()
+
+    sub = matrix_copy.loc[:, columns]
+    if on_cells:
+        # Based on seurat CLR function
+        # https://github.com/satijalab/seurat/blob/9843b843ed0c3429d86203011fda00badeb29c2e/R/preprocessing.R#L2192
+        sub = sub.apply(lambda x: np.log1p(x / gmean(x[x > 0])))
+    else:
+        sub = sub.apply(lambda x: np.log1p(x / gmean(x[x > 0])), axis=1)
+    matrix_copy.loc[:, columns] = sub
+    return matrix_copy
+
+
+pd.DataFrame.clr_normalize = clr_normalize
