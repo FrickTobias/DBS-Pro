@@ -11,18 +11,14 @@ jobs:
   run:
     name: Run pipeline
     timeout-minutes: 10
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      matrix:
-        os: [ ubuntu, macos ]
-        os-alt: [ linux, osx ]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           activate-environment: testenv
-          environment-file: environment.${{ matrix.os-alt }}-64.lock
+          environment-file: environment.linux-64.lock
         - run: |
           pip install .[dev]
           conda info
