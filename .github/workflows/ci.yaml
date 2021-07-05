@@ -15,14 +15,14 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu, macos ]
-        env: [ environment.linux-64.lock, environment.osx-64.lock ]
+        env: [ environment.linux-64, environment.osx-64 ]
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
           activate-environment: testenv
-          environment-file: ${{ matrix.env }}
+          environment-file: ${{ matrix.env }}.lock
         - run: |
           pip install .[dev]
           conda info
