@@ -2,8 +2,8 @@ name: CI
 
 on: 
   pull_request:
-    - branch:
-        - master
+    branch:
+      - master
   schedule:
     - cron: 0 7 * * 1-5
 
