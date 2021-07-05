@@ -5,6 +5,7 @@
 - [About](#About)
 - [Setup](#Setup)
 - [Usage](#Usage)
+- [Demo](#Demo)
 - [Publications](#Publications)
 
 ## About
@@ -145,6 +146,12 @@ Size (bp):   |      15     | |         21        | | 5 | | 6  | |          24   
 ```
 
 This is the construct used in the article [Wu et al. 2019][2] which introduces the Proximity Barcoding Assay (PBA).
+
+## Demo
+
+A short demostration of the pipeline and some downstream analysis is available in the following
+[Jupyter Notebook](example/example.ipynb). This can also be used to test that the [conda environment](#Setup) is
+properly setup.
 
 ## Publications
 
