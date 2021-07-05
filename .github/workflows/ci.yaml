@@ -1,0 +1,46 @@
+name: CI
+
+on: 
+  pull_request:
+    - branch:
+        - master
+  schedule:
+    - cron: 0 7 * * 1-5
+
+jobs:
+  run:
+    name: Run pipeline
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      matrix:
+        os: ["ubuntu", "macos"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: false
+          activate-environment: testenv
+          environment-file: environment.${{ matrix.os }}-64.lock
+      - name: Install DBS-Pro
+        run: |
+          pip install .[dev]
+      - name: Env info
+        run: |
+          conda info
+          conda list
+          dbspro --version
+      - name: Run flake8
+        run: |
+          flake8 src/ tests/
+          flake8 --select=W292 --filename '*.yaml,*.yml'
+      - name: Download test dataset
+        env:
+          testdata_version: "0.3"
+        run: |
+          wget -nv https://export.uppmax.uu.se/uppstore2018173/DBS-Pro-testdata-${testdata_version}.tar.gz
+          tar xf DBS-Pro-testdata-${testdata_version}.tar.gz
+          ln -s DBS-Pro-testdata-${testdata_version} testdata
+      - name: Run tests
+        run: |
+          tests/run.sh
