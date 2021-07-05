@@ -22,7 +22,7 @@ jobs:
         with:
           auto-update-conda: false
           activate-environment: testenv
-          environment-file: ${{matrix.env}}
+          environment-file: ${{ matrix.env }}
         - run: |
           pip install .[dev]
           conda info
