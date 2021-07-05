@@ -8,8 +8,6 @@ from dbspro.cli.config import change_config
 
 TESTDATA_READS = Path("testdata/reads-10k-DBS.fastq.gz")
 ABC_SEQUENCES = Path("testdata/ABC-sequences.fasta")
-DBSPRO_LOG_FILE = Path("tests/data/example_dbspro_logfile.log")
-CUTADAPT_LOG_FILE = Path("tests/data/example_cutadapt_logfile.log")
 
 
 def test_init(tmpdir):
