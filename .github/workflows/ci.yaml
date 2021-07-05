@@ -15,30 +15,22 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu", "macos"]
+        env: ["environment.linux-64.lock", "environment.osx-64.lock"]
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
-        if: matrix.os == 'ubuntu'
         with:
           auto-update-conda: false
           activate-environment: testenv
-          environment-file: environment.linux-64.lock
-      - uses: conda-incubator/setup-miniconda@v2
-        if: matrix.os == 'macos'
-        with:
-          auto-update-conda: false
-          activate-environment: testenv
-          environment-file: environment.osx-64.lock
-      - name: Install DBS-Pro
-        run: |
+          environment-file: ${{matrix.env}}
+        - run: |
           pip install .[dev]
-      - name: Env info
-        run: |
           conda info
           conda list
           dbspro --version
       - name: Run flake8
         run: |
+          conda activate testenv
           flake8 src/ tests/
           flake8 --select=W292 --filename '*.yaml,*.yml'
       - name: Download test dataset
@@ -50,4 +42,5 @@ jobs:
           ln -s DBS-Pro-testdata-${testdata_version} testdata
       - name: Run tests
         run: |
+          conda activate testenv
           tests/run.sh
