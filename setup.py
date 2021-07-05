@@ -16,6 +16,7 @@ setup(
     install_requires=[
         "pysam",
         "pandas",
+        "numpy",
         "dnaio",
         "tqdm",
         "snakemake",
