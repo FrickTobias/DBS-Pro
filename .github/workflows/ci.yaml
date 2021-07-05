@@ -17,7 +17,6 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
-          activate-environment: testenv
           environment-file: environment.linux-64.lock
         - run: |
           pip install .[dev]
@@ -26,7 +25,7 @@ jobs:
           dbspro --version
       - name: Run flake8
         run: |
-          conda activate testenv
+          conda activate test
           flake8 src/ tests/
           flake8 --select=W292 --filename '*.yaml,*.yml'
       - name: Download test dataset
@@ -38,5 +37,5 @@ jobs:
           ln -s DBS-Pro-testdata-${testdata_version} testdata
       - name: Run tests
         run: |
-          conda activate testenv
+          conda activate test
           tests/run.sh
