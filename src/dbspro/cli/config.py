@@ -43,8 +43,9 @@ STANDARD_CONSTRUCTS = {
 
 
 def main(args):
-    if args.set or args.construct:
-        args.set.extend(STANDARD_CONSTRUCTS[args.construct])
+    if args.set or args.construct is not None:
+        if args.construct is not None:
+            args.set.extend(STANDARD_CONSTRUCTS[args.construct])
         change_config(args.file, args.set)
     elif args.print_construct:
         print_construct(args.file)
