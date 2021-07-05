@@ -18,10 +18,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
+        if: matrix.os == "ubuntu"
         with:
           auto-update-conda: false
           activate-environment: testenv
-          environment-file: environment.${{ matrix.os }}-64.lock
+          environment-file: environment.linux-64.lock
+      - uses: conda-incubator/setup-miniconda@v2
+        if: matrix.os == "macos"
+        with:
+          auto-update-conda: false
+          activate-environment: testenv
+          environment-file: environment.osx-64.lock
       - name: Install DBS-Pro
         run: |
           pip install .[dev]
