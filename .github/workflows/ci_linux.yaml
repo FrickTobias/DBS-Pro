@@ -26,8 +26,6 @@ jobs:
         run: |
           conda activate testenv
           pip install .[dev]
-          # Required to make umi-tools output consistent. 
-          export PYTHONHASHSEED=1 
           conda info
           conda list
           dbspro --version
@@ -46,4 +44,6 @@ jobs:
       - name: Run tests
         run: |
           conda activate testenv
+          # Required to make umi-tools output consistent. 
+          export PYTHONHASHSEED=1 
           pytest -v tests/
