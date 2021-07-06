@@ -100,6 +100,19 @@ def run(
                         delete_all_output=delete_all_output,
                         forcerun=force_run,
                         workdir=workdir,
+                        log_handler=[print_log_on_error],
                         printreason=dryrun)
     if not success:
         raise SnakemakeError()
+
+
+def print_log_on_error(msg):
+    """Prints logs of failed rules in case of error"""
+    if msg["level"] == "job_error" and msg["log"]:
+        for log in msg["log"]:
+            head = f"=== Output from log: '{log}' ==="
+            print(head)
+            if log.exists:
+                with open(log) as f:
+                    print(f.read().strip())
+            print("-"*len(head))
