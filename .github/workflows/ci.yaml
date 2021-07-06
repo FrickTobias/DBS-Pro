@@ -12,22 +12,26 @@ jobs:
     name: Run pipeline
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
+          activate-environment: testenv
           auto-update-conda: false
           environment-file: environment.linux-64.lock
       - name: Install and check env
         run: |
-          conda activate test
+          conda activate testenv
           pip install .[dev]
           conda info
           conda list
           dbspro --version
       - name: Run flake8
         run: |
-          conda activate test
+          conda activate testenv
           flake8 src/ tests/
           flake8 --select=W292 --filename '*.yaml,*.yml'
       - name: Download test dataset
@@ -39,5 +43,5 @@ jobs:
           ln -s DBS-Pro-testdata-${testdata_version} testdata
       - name: Run tests
         run: |
-          conda activate test
+          conda activate testenv
           tests/run.sh
