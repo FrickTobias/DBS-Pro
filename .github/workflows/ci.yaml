@@ -44,4 +44,5 @@ jobs:
       - name: Run tests
         run: |
           conda activate testenv
+          chmod +x tests/run.sh
           tests/run.sh
