@@ -1,25 +1,17 @@
-name: CI
+name: CI MacOS
 
 on: 
   pull_request:
     branch:
       - master
   schedule:
-    - cron: 0 7 * * 1,3,5
+    - cron: 0 7 * * 1
 
 jobs:
   run:
     name: Run pipeline
-    timeout-minutes: 7
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, macos-latest ]
-        include:
-          - os: ubuntu-latest
-            env: "environment.linux-64.lock"
-          - os: macos-latest
-            env: "environment.osx-64.lock"
+    timeout-minutes: 10
+    runs-on: macos-latest
     defaults:
       run:
         shell: bash -l {0}
@@ -29,7 +21,7 @@ jobs:
         with:
           activate-environment: testenv
           auto-update-conda: false
-          environment-file: ${{ matrix.env }}
+          environment-file: environment.osx-64.lock
       - name: Install and check env
         run: |
           conda activate testenv
