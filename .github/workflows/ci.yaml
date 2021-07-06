@@ -19,6 +19,7 @@ jobs:
           auto-update-conda: false
           environment-file: environment.linux-64.lock
         run: |
+          conda activate test
           pip install .[dev]
           conda info
           conda list
