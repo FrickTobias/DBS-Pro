@@ -6,6 +6,7 @@
 - [Setup](#Setup)
 - [Usage](#Usage)
 - [Demo](#Demo)
+- [Development](#Development)
 - [Publications](#Publications)
 
 ## About
@@ -152,6 +153,10 @@ This is the construct used in the article [Wu et al. 2019][2] which introduces t
 A short demostration of the pipeline and some downstream analysis is available in the following
 [Jupyter Notebook](example/example.ipynb). This can also be used to test that the [conda environment](#Setup) is
 properly setup.
+
+## Development
+
+For notes on development see [doc/development](docs/development.rst).
 
 ## Publications
 
