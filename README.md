@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FrickTobias/DBS-Pro.svg?branch=master)](https://travis-ci.org/FrickTobias/DBS-Pro) <!-- markdownlint-disable MD041-->
+[![CI Linux](https://github.com/FrickTobias/DBS-Pro/actions/workflows/ci_linux.yaml/badge.svg?branch=master&event=schedule)](https://github.com/FrickTobias/DBS-Pro/actions/workflows/ci_linux.yaml) [![CI MacOS](https://github.com/FrickTobias/DBS-Pro/actions/workflows/ci_macos.yaml/badge.svg?branch=master&event=schedule)](https://github.com/FrickTobias/DBS-Pro/actions/workflows/ci_macos.yaml) <!-- markdownlint-disable MD041-->
 
 # DBS-Pro Analysis
 
