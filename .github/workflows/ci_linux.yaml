@@ -44,5 +44,6 @@ jobs:
       - name: Run tests
         run: |
           conda activate testenv
-          chmod +x tests/run.sh
-          tests/run.sh
+          # Required to make umi-tools output consistent. 
+          export PYTHONHASHSEED=1 
+          pytest -v tests/
