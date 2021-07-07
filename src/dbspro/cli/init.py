@@ -136,8 +136,8 @@ def count_reads(fastq: Path) -> int:
         return sum([1 for _ in f])
 
 
-def write_abc_fasta_to_dir(abc_file, directory):
-    abc_file_out = directory / ABC_FILE_NAME
+def write_abc_fasta_to_dir(abc_file: Path, directory: Path):
+    abc_file_out = str(directory / ABC_FILE_NAME)
     with dnaio.open(abc_file_out, mode='w', fileformat="fasta") as open_out, \
             dnaio.open(abc_file, mode='r', fileformat="fasta") as open_in:
         for read in open_in:
