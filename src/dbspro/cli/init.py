@@ -78,15 +78,8 @@ def create_and_populate_analysis_directory(directory: Path, reads: List[Path], a
     with (directory / CONFIGURATION_FILE_NAME).open("wb") as f:
         f.write(configuration)
 
-    # Write ABC fasta file with ^ prior to sequence (used in cutadapt command)
-    filename_as_string = str(directory) + "/" + ABC_FILE_NAME
-    with dnaio.open(filename_as_string, mode='w', fileformat="fasta") as open_out, \
-            dnaio.open(abc_file, mode='r', fileformat="fasta") as open_in:
-        for abc in open_in:
-            if not abc.sequence.startswith("^"):
-                abc.sequence = "^" + abc.sequence
-
-            open_out.write(abc)
+    # Write ABC FASTA after checking that its correctly formatted
+    write_abc_fasta_to_dir(abc_file, directory)
 
     # Symlink sample FASTQs into workdir and create TSV with sample info
     with (directory / SAMPLE_FILE_NAME).open(mode="w") as f:
@@ -141,3 +134,19 @@ def create_symlink(readspath: Path, dirname: Path, target: str):
 def count_reads(fastq: Path) -> int:
     with dnaio.open(fastq, mode="r") as f:
         return sum([1 for _ in f])
+
+
+def write_abc_fasta_to_dir(abc_file, directory):
+    abc_file_out = directory / ABC_FILE_NAME
+    with dnaio.open(abc_file_out, mode='w', fileformat="fasta") as open_out, \
+            dnaio.open(abc_file, mode='r', fileformat="fasta") as open_in:
+        for read in open_in:
+            if "." in read.name or "-" in read.name:
+                new_name = read.name.replace(".", "_").replace("-", "_")
+                logging.info(f"Renaming target {read.name} -> {new_name}")
+                read.name = new_name
+
+            if not read.sequence.startswith("^"):
+                read.sequence = "^" + read.sequence
+
+            open_out.write(read)
