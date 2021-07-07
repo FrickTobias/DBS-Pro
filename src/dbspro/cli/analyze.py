@@ -45,16 +45,16 @@ def add_arguments(parser):
 
 def main(args):
     run_analysis(
-        dbs=args.dbs,
-        targets=args.targets,
+        dbs_file=args.dbs,
+        target_files=args.targets,
         output=args.output,
         filter=args.filter,
     )
 
 
 def run_analysis(
-    dbs: str,
-    targets: List[str],
+    dbs_file: str,
+    target_files: List[str],
     output: str,
     filter: int
 ):
@@ -63,43 +63,22 @@ def run_analysis(
     summary = Summary()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    abc_names = {file_name: os.path.basename(file_name).split('-')[0].split(".")[-1] for file_name in targets}
-    sample_name = os.path.basename(targets[0]).split(".")[0]
+    target_file_to_name = {file: os.path.basename(file).split('-')[0].split(".")[-1] for file in target_files}
+    sample_name = os.path.basename(target_files[0]).split(".")[0]
 
     logger.info("Saving DBS information to RAM")
-    bc_dict = get_dbs_headers(dbs)
+    header_to_dbs = map_header_to_sequence(dbs_file)
     logger.info("Finished processing DBS sequences")
 
     # Counting UMI:s found in the different ABC:s for all barcodes.
     logger.info("Calculating stats")
-    results = dict()
-    for current_abc in targets:
-        logger.info(f"Reading file: {current_abc}")
-
-        with dnaio.open(current_abc, mode="r", fileformat="fasta") as reader:
-            # Loop over reads in file, where read.seq = umi
-            for read in tqdm(reader, desc=f"Parsing {abc_names[current_abc]} reads"):
-
-                # Try find UMI
-                try:
-                    bc = bc_dict[read.name]
-                except KeyError:
-                    summary["UMIs without BC"] += 1
-                    continue
-
-                # If not dbs in result dict, add it and give it a dictionary for every abc
-                if bc not in results:
-                    results[bc] = {abc: defaultdict(int) for abc in abc_names.values()}
-
-                results[bc][abc_names[current_abc]][read.sequence] += 1
-
-        logger.info(f"Finished reading file: {current_abc}")
+    results = get_results(target_files, target_file_to_name, header_to_dbs, summary)
 
     summary["Total DBS count"] = len(results)
 
     df, df_filt = make_dataframes(results, filter, sample_name=sample_name)
 
-    output_stats(df_filt, sorted(abc_names.values()))
+    output_stats(df_filt, sorted(target_file_to_name.values()))
 
     logger.info("Sorting data")
     df = df.sort_values(["Barcode", "Target", "UMI"])
@@ -112,14 +91,39 @@ def run_analysis(
     logger.info("Finished")
 
 
-def get_dbs_headers(file: Path) -> Dict[str, str]:
+def get_results(target_files, file_to_name, header_to_dbs, summary):
+    results = {}
+    for target_file in target_files:
+        target_name = file_to_name[target_file]
+        logger.info(f"Reading file: {target_file}")
+
+        with dnaio.open(target_file, mode="r", fileformat="fasta") as reader:
+            # Loop over reads in file, where read.seq = umi
+            for read in tqdm(reader, desc=f"Parsing {file_to_name[target_file]} reads"):
+
+                dbs = header_to_dbs.get(read.name)
+
+                if dbs is None:
+                    summary["UMIs without BC"] += 1
+
+                # If not dbs in result dict, add it and give it a dictionary for every abc
+                if dbs not in results:
+                    results[dbs] = {abc: defaultdict(int) for abc in file_to_name.values()}
+
+                results[dbs][target_name][read.sequence] += 1
+
+        logger.info(f"Finished reading file: {target_file}")
+    return results
+
+
+def map_header_to_sequence(file: Path) -> Dict[str, str]:
     with dnaio.open(file, mode="r", fileformat="fasta") as reader:
         return {r.name: r.sequence for r in tqdm(reader, desc="Parsing DBS reads")}
 
 
 def output_stats(df_filt: pd.DataFrame, abcs: List[str]):
     # Perpare data for analysis
-    data_to_print = list()
+    data_to_print = []
     for abc in abcs:
         logger.info(f"Adding data for {abc}")
         data = df_filt[df_filt.Target.eq(abc)].groupby("Barcode")
@@ -160,26 +164,29 @@ def n50_counter(input_list: List[int]) -> int:
 AliasType = Dict[str, Dict[str, Dict[str, Dict[str, int]]]]
 
 
-def make_dataframes(results: AliasType, limit: int, sample_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def make_dataframes(results: AliasType, count_threshold: int, sample_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # Generate filtered and unfiltered dataframes from data.
-    output = list()
-    output_filt = list()
-    for bc, abcs in tqdm(results.items(), desc="Parsing results"):
-        for abc, umis in abcs.items():
-            is_ok = sum(umis.values()) >= limit
-            for umi, read_count in umis.items():
+    output = []
+    output_filt = []
+    for dbs, abc_to_umis in tqdm(results.items(), desc="Parsing results"):
+        for abc, umi_to_count in abc_to_umis.items():
+            passed_threshold = sum(umi_to_count.values()) >= count_threshold
+
+            for umi, read_count in umi_to_count.items():
                 line = {
-                    "Barcode": bc,
+                    "Barcode": dbs,
                     "Target": abc,
                     "UMI": umi,
                     "ReadCount": read_count,
                     "Sample": sample_name
                 }
                 output.append(line)
-                if is_ok:
+                if passed_threshold:
                     output_filt.append(line)
 
     # Create dataframe with barcode as index and columns with ABC data.
     cols = ["Barcode", "Target", "UMI", "ReadCount", "Sample"]
-    return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True), \
-        pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
+    output = pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True)
+    output_filt = pd.DataFrame(output_filt, columns=cols).set_index("Barcode", drop=True)
+
+    return output, output_filt
