@@ -36,7 +36,7 @@ jobs:
           flake8 --select=W292 --filename '*.yaml,*.yml'
       - name: Download test dataset
         env:
-          testdata_version: "0.3"
+          testdata_version: "0.4"
         run: |
           wget -nv https://export.uppmax.uu.se/uppstore2018173/DBS-Pro-testdata-${testdata_version}.tar.gz
           tar xf DBS-Pro-testdata-${testdata_version}.tar.gz

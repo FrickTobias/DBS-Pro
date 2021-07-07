@@ -9,7 +9,9 @@ from dbspro.cli.init import init
 from dbspro.cli.run import run
 from dbspro.cli.config import change_config
 
-TESTDATA_READS = Path("testdata/reads-10k-DBS.fastq.gz")
+TESTDATA_SAMPLE1_READS = Path("testdata/sample1.fastq.gz")
+TESTDATA_SAMPLE2_READS = Path("testdata/sample2.fastq.gz")
+TESTDATA_SAMPLE3_READS = Path("testdata/sample3.fastq.gz")
 ABC_SEQUENCES = Path("testdata/ABC-sequences.fasta")
 
 
@@ -24,7 +26,7 @@ def md5sum(filename):
 
 def test_init(tmpdir):
     workdir = tmpdir / "analysis"
-    init(workdir, [TESTDATA_READS], ABC_SEQUENCES)
+    init(workdir, [TESTDATA_SAMPLE1_READS], ABC_SEQUENCES)
 
 
 def test_init_from_csv(tmpdir):
@@ -32,7 +34,7 @@ def test_init_from_csv(tmpdir):
     sample_name = "mysample"
     sample_csv = tmpdir / "samples.csv"
     with sample_csv.open(mode="w") as f:
-        print(f"{TESTDATA_READS},{sample_name}", file=f)
+        print(f"{TESTDATA_SAMPLE1_READS},{sample_name}", file=f)
 
     init(workdir, [], ABC_SEQUENCES, sample_csv=sample_csv)
     assert (workdir / sample_name + ".fastq.gz").exists()
@@ -40,17 +42,24 @@ def test_init_from_csv(tmpdir):
 
 def test_change_config(tmpdir):
     workdir = tmpdir / "analysis"
-    init(workdir, [TESTDATA_READS], ABC_SEQUENCES)
+    init(workdir, [TESTDATA_SAMPLE1_READS], ABC_SEQUENCES)
     change_config(workdir / "dbspro.yaml", [("dbs_cluster_dist", "1")])
 
 
 @pytest.fixture(scope="module")
 def workdir(tmp_path_factory):
     """This runs the pipeline using default parameters"""
-    path = tmp_path_factory.mktemp(basename="analysis-") / "analysis"
-    init(path, [TESTDATA_READS], ABC_SEQUENCES)
-    run(targets=[], workdir=path)
-    return path
+    path = tmp_path_factory.mktemp(basename="analysis-")
+    workdir = path / "analysis"
+    sample_csv = path / "samples.csv"
+    with sample_csv.open(mode="w") as f:
+        print(f"{TESTDATA_SAMPLE1_READS},Sample1", file=f)
+        print(f"{TESTDATA_SAMPLE2_READS},Sample2", file=f)
+        print(f"{TESTDATA_SAMPLE3_READS},Sample3", file=f)
+
+    init(workdir, [], ABC_SEQUENCES, sample_csv=sample_csv)
+    run(targets=[], workdir=workdir)
+    return workdir
 
 
 @pytest.mark.parametrize("file", ["report.ipynb", "data.tsv.gz"])
@@ -63,7 +72,7 @@ def test_output_tsv_md5sum(workdir):
         pytest.skip("Environment variable 'PYTHONHASHSEED' not '1'.")
     else:
         m = md5sum(workdir / "data.tsv.gz")
-        assert m == "9bef4dfad7df7c09575b1ab6423f1748"
+        assert m == "b908621c64f067a3e0c1a986bee0fdcb"
 
 
 def test_version_exit_code_zero():
