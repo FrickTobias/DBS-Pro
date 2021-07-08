@@ -180,18 +180,17 @@ rule correct_dbs:
         " 2> {log}"
 
 
-rule analyze:
-    """Analyzes all result files"""
+rule integrate:
+    """Integrate data into TSV with each DBS, ABC, UMI combination with read count for each sample."""
     output:
         data="{sample}.data.tsv.gz"
     input:
         dbs_fasta="{sample}.dbs-corrected.fasta.gz",
         abc_fastas=expand("ABCs/{{sample}}.{abc}-UMI-corrected.fasta.gz", abc=abc['Target'])
-    log: "log_files/{sample}.analyze.log"
+    log: "log_files/{sample}.integrate.log"
     shell:
-        "dbspro analyze"
+        "dbspro integrate"
         " -o {output.data}"
-        " -f {config[filter_reads]}"
         " {input.dbs_fasta}"
         " {input.abc_fastas}"
         " 2> {log}"
