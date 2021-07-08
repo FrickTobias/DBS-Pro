@@ -186,17 +186,31 @@ def to_matrix(df: pd.DataFrame, norm: bool = False, on_cells: bool = False, qc: 
     """Convert from long (raw) fromat to wide format. Each row is a barcode with the corresponding UMI count for
     each target.
     """
-    matrix = df.groupby(["Barcode", "Target"], as_index=False)["UMI"].count().set_index("Barcode")\
-        .pivot(columns="Target", values="UMI").fillna(0)
+    samples = sorted(list(set(df["Sample"])))
+    targets = sorted(list(set(df["Target"])))
+    matrix = []
+    for sample in samples:
+        df_sample = df[df["Sample"] == sample].copy()
+        matrix_sample = df_sample.groupby(["Barcode", "Target"], as_index=False)["UMI"].count().set_index("Barcode")\
+            .pivot(columns="Target", values="UMI").fillna(0)
 
-    if norm:
-        matrix = clr_normalize(matrix, on_cells=on_cells)
+        matrix_sample["Sample"] = sample
+        matrix_sample["Sample"] = matrix_sample["Sample"].astype("category")
 
-    if qc:
-        matrix._qc(inplace=True)
-        map_rc = {bc: group["ReadCount"].sum() for bc, group in df.groupby("Barcode")}
-        matrix["total_reads"] = matrix.index.to_series().map(map_rc)
+        if norm:
+            matrix_sample = clr_normalize(matrix_sample, on_cells=on_cells)
 
+        if qc:
+            matrix_sample._qc(inplace=True)
+            map_rc = {bc: group["ReadCount"].sum() for bc, group in df_sample.groupby("Barcode")}
+            matrix_sample["total_reads"] = matrix_sample.index.to_series().map(map_rc)
+
+        matrix.append(matrix_sample)
+
+    matrix = pd.concat(matrix)
+    # Target_columns come first and replace NaN
+    matrix = matrix[[*targets, *[c for c in matrix if c not in targets]]]
+    matrix.loc[:, targets] = matrix.loc[:, targets].fillna(0)
     return matrix
 
 
@@ -207,16 +221,31 @@ def to_readmatrix(df: pd.DataFrame, norm: bool = False, on_cells: bool = False, 
     """Convert from long (raw) fromat to wide format. Each row is a barcode with the corresponding read count for
     each target.
     """
-    matrix = df.groupby(["Barcode", "Target"], as_index=False)["ReadCount"].sum().set_index("Barcode")\
-        .pivot(columns="Target", values="ReadCount").fillna(0)
-    if norm:
-        matrix = clr_normalize(matrix, on_cells=on_cells)
+    samples = sorted(list(set(df["Sample"])))
+    targets = sorted(list(set(df["Target"])))
+    matrix = []
+    for sample in samples:
+        df_sample = df[df["Sample"] == sample].copy()
+        matrix_sample = df_sample.groupby(["Barcode", "Target"], as_index=False)["ReadCount"].sum()\
+            .set_index("Barcode").pivot(columns="Target", values="ReadCount").fillna(0)
 
-    if qc:
-        matrix._qc(inplace=True)
-        map_rc = {bc: group["ReadCount"].sum() for bc, group in df.groupby("Barcode")}
-        matrix["total_reads"] = matrix.index.to_series().map(map_rc)
+        matrix_sample["Sample"] = sample
+        matrix_sample["Sample"] = matrix_sample["Sample"].astype("category")
 
+        if norm:
+            matrix_sample = clr_normalize(matrix_sample, on_cells=on_cells)
+
+        if qc:
+            matrix_sample._qc(inplace=True)
+            map_rc = {bc: group["ReadCount"].sum() for bc, group in df_sample.groupby("Barcode")}
+            matrix_sample["total_reads"] = matrix_sample.index.to_series().map(map_rc)
+
+        matrix.append(matrix_sample)
+
+    matrix = pd.concat(matrix)
+    # Target_columns come first and replace NaN
+    matrix = matrix[[*targets, *[c for c in matrix if c not in targets]]]
+    matrix.loc[:, targets] = matrix.loc[:, targets].fillna(0)
     return matrix
 
 
@@ -233,6 +262,7 @@ def _qc(df, targets=None, inplace=False):
         targets = matrix.select_dtypes(include=np.number).columns.tolist()
 
     matrix["total_count"] = matrix.loc[:, targets].sum(axis=1)
+    matrix["total_count"] = matrix["total_count"].astype(np.int64)
     matrix["nr_targets"] = matrix.loc[:, targets].gt(0).sum(axis=1)
     return matrix
 
