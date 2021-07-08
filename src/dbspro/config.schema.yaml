@@ -1,5 +1,5 @@
 $schema: "http://json-schema.org/draft-06/schema#"
-description: Configuration parameters for running BLR pipeline
+description: Configuration parameters for running DBS-Pro pipeline
 properties:
   dbs:
     type: string
