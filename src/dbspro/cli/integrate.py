@@ -10,7 +10,7 @@ import logging
 from collections import defaultdict
 import os
 import sys
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from pathlib import Path
 
 import dnaio
@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 
 def add_arguments(parser):
     parser.add_argument(
-        "dbs", type=Path,
+        "dbs_file", type=Path,
         help="Path to FASTA with error-corrected DBS barcode sequences."
     )
     parser.add_argument(
-        "targets", nargs="+", type=Path,
+        "target_files", nargs="+", type=Path,
         help="Path to ABC-specific FASTAs with UMI sequences to combine with DBS. "
     )
     parser.add_argument(
@@ -39,15 +39,15 @@ def add_arguments(parser):
 
 def main(args):
     run_analysis(
-        dbs=args.dbs,
-        targets=args.targets,
+        dbs_file=args.dbs_file,
+        target_files=args.target_files,
         output=args.output,
     )
 
 
 def run_analysis(
-    dbs: str,
-    targets: List[str],
+    dbs_file: str,
+    target_files: List[str],
     output: str,
 ):
     # Barcode processing
@@ -55,41 +55,24 @@ def run_analysis(
     summary = Summary()
 
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    abc_names = {file_name: os.path.basename(file_name).split('-')[0].split(".")[-1] for file_name in targets}
-    sample_name = os.path.basename(targets[0]).split(".")[0]
+    target_file_to_name = {file: os.path.basename(file).split('-')[0].split(".")[-1] for file in target_files}
+    sample_name = os.path.basename(target_files[0]).split(".")[0]
+    logging.info(f"Found sample {sample_name}.")
 
     logger.info("Saving DBS information to RAM")
-    bc_dict = get_dbs_headers(dbs)
-    logger.info("Finished processing DBS sequences")
+    header_to_dbs = map_header_to_sequence(dbs_file)
+    summary["Total DBS reads"] = len(header_to_dbs)
 
     # Counting UMI:s found in the different ABC:s for all barcodes.
     logger.info("Calculating stats")
-    results = dict()
-    for current_abc in targets:
-        logger.info(f"Reading file: {current_abc}")
-
-        with dnaio.open(current_abc, mode="r", fileformat="fasta") as reader:
-            # Loop over reads in file, where read.seq = umi
-            for read in tqdm(reader, desc=f"Parsing {abc_names[current_abc]} reads"):
-
-                # Try find UMI
-                try:
-                    bc = bc_dict[read.name]
-                except KeyError:
-                    summary["UMIs without BC"] += 1
-                    continue
-
-                # If not dbs in result dict, add it and give it a dictionary for every abc
-                if bc not in results:
-                    results[bc] = {abc: defaultdict(int) for abc in abc_names.values()}
-
-                results[bc][abc_names[current_abc]][read.sequence] += 1
-
-        logger.info(f"Finished reading file: {current_abc}")
+    results = get_results(target_files, target_file_to_name, header_to_dbs, summary)
 
     summary["Total DBS count"] = len(results)
 
-    df = make_dataframe(results, sample_name=sample_name)
+    df = make_dataframe(results)
+
+    # Attach sample info
+    df["Sample"] = sample_name
 
     logger.info("Sorting data")
     df = df.sort_values(["Barcode", "Target", "UMI"])
@@ -102,29 +85,54 @@ def run_analysis(
     logger.info("Finished")
 
 
-def get_dbs_headers(file: Path) -> Dict[str, str]:
+def map_header_to_sequence(file: Path) -> Dict[str, str]:
     with dnaio.open(file, mode="r", fileformat="fasta") as reader:
         return {r.name: r.sequence for r in tqdm(reader, desc="Parsing DBS reads")}
+
+
+def get_results(target_files: List[Path], target_file_to_name: Dict[Path, str], header_to_dbs: Dict[str, str],
+                summary: Dict[str, int]):
+    results = {}
+    for current_target in target_files:
+        logger.info(f"Reading file: {current_target}")
+
+        with dnaio.open(current_target, mode="r", fileformat="fasta") as reader:
+            # Loop over reads in file, where read.seq = umi
+            for read in tqdm(reader, desc=f"Parsing {target_file_to_name[current_target]} reads"):
+                summary["Total target reads"] += 1
+                dbs = header_to_dbs.get(read.name)
+
+                if dbs is None:
+                    summary["Target reads without DBS"] += 1
+
+                # If not dbs in result dict, add it and give it a dictionary for every abc
+                if dbs not in results:
+                    results[dbs] = {target_name: defaultdict(int) for target_name in target_file_to_name.values()}
+
+                results[dbs][target_file_to_name[current_target]][read.sequence] += 1
+
+        logger.info(f"Finished reading file: {current_target}")
+
+    return results
 
 
 AliasType = Dict[str, Dict[str, Dict[str, Dict[str, int]]]]
 
 
-def make_dataframe(results: AliasType, sample_name: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def make_dataframe(results: AliasType) -> pd.DataFrame:
     # Generate filtered and unfiltered dataframes from data.
-    output = list()
-    for bc, abcs in tqdm(results.items(), desc="Parsing results"):
-        for abc, umis in abcs.items():
-            for umi, read_count in umis.items():
+    output = []
+    for dbs, target_to_umis in tqdm(results.items(), desc="Parsing results"):
+        for target, umi_to_count in target_to_umis.items():
+            for umi, read_count in umi_to_count.items():
                 line = {
-                    "Barcode": bc,
-                    "Target": abc,
+                    "Barcode": dbs,
+                    "Target": target,
                     "UMI": umi,
                     "ReadCount": read_count,
-                    "Sample": sample_name
                 }
                 output.append(line)
 
     # Create dataframe with barcode as index and columns with ABC data.
-    cols = ["Barcode", "Target", "UMI", "ReadCount", "Sample"]
+    cols = ["Barcode", "Target", "UMI", "ReadCount"]
     return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True)
