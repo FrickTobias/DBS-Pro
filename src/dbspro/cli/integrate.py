@@ -10,7 +10,7 @@ import logging
 from collections import defaultdict
 import os
 import sys
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from pathlib import Path
 
 import dnaio
@@ -91,8 +91,8 @@ def map_header_to_sequence(file: Path) -> Dict[str, str]:
 
 
 def get_results(target_files: List[Path], target_file_to_name: Dict[Path, str], header_to_dbs: Dict[str, str],
-                summary: Dict[str, int]):
-    results = {}
+                summary: Dict[str, int]) -> Dict[Tuple[str, str, str], int]:
+    results = defaultdict(int)
     for current_target in target_files:
         logger.info(f"Reading file: {current_target}")
 
@@ -104,35 +104,17 @@ def get_results(target_files: List[Path], target_file_to_name: Dict[Path, str], 
 
                 if dbs is None:
                     summary["Target reads without DBS"] += 1
+                    continue
 
-                # If not dbs in result dict, add it and give it a dictionary for every abc
-                if dbs not in results:
-                    results[dbs] = {target_name: defaultdict(int) for target_name in target_file_to_name.values()}
-
-                results[dbs][target_file_to_name[current_target]][read.sequence] += 1
+                results[(dbs, target_file_to_name[current_target], read.sequence)] += 1
 
         logger.info(f"Finished reading file: {current_target}")
 
     return results
 
 
-AliasType = Dict[str, Dict[str, Dict[str, Dict[str, int]]]]
-
-
-def make_dataframe(results: AliasType) -> pd.DataFrame:
-    # Generate filtered and unfiltered dataframes from data.
-    output = []
-    for dbs, target_to_umis in tqdm(results.items(), desc="Parsing results"):
-        for target, umi_to_count in target_to_umis.items():
-            for umi, read_count in umi_to_count.items():
-                line = {
-                    "Barcode": dbs,
-                    "Target": target,
-                    "UMI": umi,
-                    "ReadCount": read_count,
-                }
-                output.append(line)
-
+def make_dataframe(results: Dict[Tuple[str, str, str], int]) -> pd.DataFrame:
+    output = [(*dbs_target_umi, count) for dbs_target_umi, count in tqdm(results.items(), desc="Parsing results")]
     # Create dataframe with barcode as index and columns with ABC data.
     cols = ["Barcode", "Target", "UMI", "ReadCount"]
     return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True)
