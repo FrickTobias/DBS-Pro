@@ -123,19 +123,15 @@ def assign_to_dbs(file: Iterable[Sequence], name_to_umi: Dict[str, str], summary
                   }
            }
     """
-    dbs_groups = defaultdict(dict)
+    dbs_groups = defaultdict(lambda: defaultdict(list))
     for read in tqdm(file, desc="Assigning DBS"):
         summary["DBS reads"] += 1
-        # Skip reads that are not to be clustered
-        if read.name not in name_to_umi:
-            continue
-
         # Get sequences
         dbs = read.sequence
-        umi = name_to_umi[read.name]
+        umi = name_to_umi.get(read.name)
 
-        if umi not in dbs_groups[dbs]:
-            dbs_groups[dbs][umi] = list()
+        if umi is None:
+            continue
 
         dbs_groups[dbs][umi].append(read.name)
 
