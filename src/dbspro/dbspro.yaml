@@ -23,5 +23,4 @@ demultiplex_err_rate: 0.2 # Error rate for demultiplexing ABC sequences..
 ####################
 dbs_cluster_dist: 2 # Maximum edit distance to cluster DBS sequences in Starcode.
 abc_cluster_dist: 1 # Maximum edit distance to cluster ABC sequences in Starcode.
-filter_reads: 1 # Minimum reads required for an ABC to be included in analysis output.
 subsample: -1 # Subsample to this amount of reads. '0' = subsample the to the lowest count sample. '-1' = skip. 
