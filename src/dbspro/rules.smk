@@ -30,6 +30,7 @@ else: # For DBS-Pro input
 do_sampling = "subsampled." if config["subsample"] != -1 else ""
 nr_samples = len(samples)
 
+
 rule subsample:
     """Subsample input reads to required depth if needed"""
     output:
@@ -126,7 +127,7 @@ rule demultiplex_abc:
 
 
 rule dbs_cluster:
-    """Cluster DBS sequence using starcode"""
+    """Cluster DBS sequence using starcode for error correction."""
     output:
         clusters="{sample}.dbs-clusters.txt.gz"
     input:
@@ -142,9 +143,8 @@ rule dbs_cluster:
         " 2> {log} | pigz > {output.clusters}"
 
 
-rule abc_cluster:
-    """Cluster ABC sequence using starcode. If the input file is empty (no ABC sequence found)
-    a empty output file will also be created."""
+rule umi_cluster:
+    """Cluster UMIs using UMI-tools API for each DBS and ABC to error correct them."""
     output:
         reads="ABCs/{sample}.{target}-UMI-corrected.fasta.gz"
     input:
@@ -162,7 +162,7 @@ rule abc_cluster:
 
 
 rule correct_dbs:
-    """Combine cluster results with original files to error correct them."""
+    """Combine DBS clustering results with original FASTA for error correction."""
     output:
         reads="{sample}.dbs-corrected.fasta.gz"
     input:
@@ -198,7 +198,7 @@ rule analyze:
 
 
 rule merge_data:
-    """Merge data from samples"""
+    """Merge data from all samples"""
     output:
         data = "data.tsv.gz"
     input: 
@@ -209,7 +209,7 @@ rule merge_data:
 
 
 rule make_report:
-    """Make jupyter notebook for final analysis"""
+    """Make jupyter notebook for final report"""
     output:
           html = "report.html",
           notebook = "report.ipynb",
