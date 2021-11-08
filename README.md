@@ -11,7 +11,17 @@
 
 ## About
 
-This pipeline analyses data sequencing data from DBS-Pro experiments for protein and PrEST quantification.
+This pipeline analyses data sequencing data from DBS-Pro experiments for protein and PrEST quantification. The DBS-Pro method uses barcoded antibodies for surface protein quantification in droplets.
+
+<!-- Image generated using DBS-Pro-testdata-0.4 with command `dbspro run --dag | dot -Tpng -Gdpi=300 > dag.png`.-->
+![DBS-Pro pipeline overview](https://user-images.githubusercontent.com/27061883/125053336-47936600-e0a5-11eb-99c4-846bd0f056d7.png)
+<p align="center"><i>Overview of DBS-Pro pipeline run on three samples.</i></p>
+
+The pipeline takes input of single end FASTQs with a construct such as those specified in [standard constructs](##Standard-constructs). For each sample the [DBS](#DBS) is extracted (`extract_dbs`) and clustered (`dbs_cluster`) to enable error correction of the DBS sequences (`correct_dbs`). At the same time the [ABC](#ABC) and [UMI](#UMI) are extracted from the same read (`extract_abc_umi`)and then the UMIs are demultiplexed based on their ABC (`demultiplex_abc`). For each ABC the UMIs are grouped by DBS then clustered to correct errors (`umi_cluster`). Finaly the corrected sequences are combined into a read specific DBS, ABC and UMI combination that are tallied to create the final output in the form of a TSV (`integrate`). If there are multiple sampels these are also merged to generate a combined TSV (`merge_data`). A final report is also generated to enable some basic QC of the data. Also see the [demo](/example/example.ipynb) for a step-by-step of a typical workflow.   
+
+<sup><a name="DBS"><b>DBS</b></a>: Droplet Barcode Sequence. Reads sharing this sequence originate from the same droplet.</sup><br/>
+<sup><a name="ABC"><b>ABC</b></a>: Antibody Barcodes Sequence. Identifies which antibody was present in the droplet.</sup><br/>
+<sup><a name="UMI"><b>UMI</b></a>: Unique Molecular Identifier. Identifies how many antibodies with a particular ABC that was present in the droplet.</sup><br/>
 
 ## Setup
 
