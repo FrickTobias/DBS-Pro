@@ -88,6 +88,16 @@ pd.DataFrame.filter_ratio = filter_ratio
 
 
 @_filter_wrapper
+def filter_target_count(df: pd.DataFrame, threshold: int, opr=operator.gt) -> pd.DataFrame:
+    """Filter UMI count per target"""
+    print(f"Filtering for targets with UMI count {opr.__name__} {threshold}")
+    return df[opr(df.groupby(["Barcode", "Target"])["UMI"].transform('count'), threshold)]
+
+
+pd.DataFrame.filter_target_count = filter_target_count
+
+
+@_filter_wrapper
 def filter_dups(df: pd.DataFrame, threshold: Union[float, int] = 2, min_len: int = 3) -> pd.DataFrame:
     """Remove barcodes that share a portion of their UMI-Targets combos based on the given threshold. If float
     then jaccard_index is used. If int then the there must be at least this many combos in common."""
