@@ -9,13 +9,10 @@ import operator
 import time
 import pandas as pd
 import numpy as np
-from itertools import combinations
 from umi_tools import UMIClusterer
 from typing import Union
 from scipy.stats.mstats import gmean
-from tqdm.notebook import tqdm
-
-from dbspro.utils import jaccard_index
+from scipy.sparse import csr_matrix
 
 
 def _filter_wrapper(func):
@@ -104,28 +101,54 @@ def filter_dups(df: pd.DataFrame, threshold: Union[float, int] = 2, min_len: int
     def nr_shared(set1, set2):
         return set1 & set2
 
-    if isinstance(threshold, int):
-        print(f"Filter barcodes who share >{threshold} UMI + Target combos ")
-        compare_function = nr_shared
-    else:
-        print(f"Filter barcodes whose UMI + Target combos have a jaccard index >{threshold}")
-        compare_function = jaccard_index
-
     d = df.copy()
     d["Target-UMI"] = d[["Target", "UMI"]].agg("-".join, axis=1)
     bcs = d.groupby("Barcode")["Target-UMI"].apply(set)
     bcs = dict(bcs[bcs.transform(len) >= min_len])
 
-    total = (len(bcs) * (len(bcs) - 1)) / 2
-    barcodes_to_remove = set()
-    for bc1, bc2 in tqdm(combinations(bcs, 2), desc="Parsing pairs", total=total, unit_scale=True):
-        if bc1 in barcodes_to_remove and bc2 in barcodes_to_remove:
-            continue
+    indptr = [0]
+    indices = []
+    data = []
+    umis = {}
+    barcodes = []
 
-        s1 = bcs[bc1]
-        s2 = bcs[bc2]
-        if compare_function(s1, s2) > threshold:
-            barcodes_to_remove.update({bc1, bc2})
+    for bc, umi_set in bcs.items():
+        for umi in umi_set:
+            index = umis.setdefault(umi, len(umis))
+            indices.append(index)
+            data.append(1)
+        indptr.append(len(indices))
+        barcodes.append(bc)
+    barcodes = np.array(barcodes)
+
+    arr = csr_matrix((data, indices, indptr), dtype=int)
+    overlapps = (arr * arr.transpose())
+    bcs_rows, bcs_cols = overlapps.nonzero()
+    in_lower = bcs_rows < bcs_cols
+    bcs_rows = bcs_rows[in_lower]
+    bcs_cols = bcs_cols[in_lower]
+    nr_overlapps = np.array(overlapps[bcs_rows, bcs_cols]).flatten()
+
+    barcodes_to_remove = set()
+    if isinstance(threshold, int):
+        print(f"Filter barcodes who share >{threshold} UMI + Target combos ")
+        dups = nr_overlapps > threshold
+        dup_cols = bcs_cols[dups]
+        dup_rows = bcs_rows[dups]
+        barcodes_to_remove |= set(barcodes[dup_cols])
+        barcodes_to_remove |= set(barcodes[dup_rows])
+    else:
+        print(f"Filter barcodes whose UMI + Target combos have a jaccard index >{threshold}")
+        bcs_col_counts = np.array(overlapps[bcs_cols, bcs_cols]).flatten()
+        bcs_rows_counts = np.array(overlapps[bcs_rows, bcs_rows]).flatten()
+        totals = bcs_col_counts + bcs_rows_counts - nr_overlapps
+        jaccard_values = nr_overlapps / totals
+        dups = jaccard_values > threshold
+
+        dup_cols = bcs_cols[dups]
+        dup_rows = bcs_rows[dups]
+        barcodes_to_remove |= set(barcodes[dup_cols])
+        barcodes_to_remove |= set(barcodes[dup_rows])
 
     return df[~df["Barcode"].isin(barcodes_to_remove)]
 
