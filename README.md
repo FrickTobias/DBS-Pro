@@ -11,7 +11,7 @@
 
 ## About
 
-This pipeline analyses data sequencing data from DBS-Pro experiments for protein and PrEST quantification. The DBS-Pro method uses barcoded antibodies for surface protein quantification in droplets.
+This pipeline analyses data sequencing data from DBS-Pro experiments for protein and PrEST quantification. The DBS-Pro method uses barcoded antibodies for surface protein quantification in droplets. For example to study [single exosomes][3].
 
 <!-- Image generated using DBS-Pro-testdata-0.4 with command `dbspro run --dag | dot -Tpng -Gdpi=300 > dag.png`.-->
 ![DBS-Pro pipeline overview](https://user-images.githubusercontent.com/27061883/125053336-47936600-e0a5-11eb-99c4-846bd0f056d7.png)
@@ -146,7 +146,7 @@ Name:        |         H1        | |       DBS        | |                   H2  
 Size (bp):   |         21        | |        20        | |                   42                   | | 5 | | 6  | |         21        |
 ```
 
-This is the DBS-Pro construct currently in use.
+This is the DBS-Pro construct used in the publication [Banijamali et al. 2022][3].
 
 #### pba
 
@@ -172,7 +172,12 @@ For notes on development see [doc/development](docs/development.rst).
 
 Checkout version [v0.1](https://github.com/FrickTobias/DBS-Pro/tree/v0.1) for the pipeline used in:
 
-[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates. Bioconjugate chemistry][1].
+[Stiller, C., Aghelpasand, H., Frick, T., Westerlund, K., Ahmadian, A., & Eriksson Karlström, A. (2019). *Fast and efficient Fc-specific photoaffinity labelling to produce antibody-DNA-conjugates*. Bioconjugate chemistry][1].
+
+Version [v0.3](https://github.com/FrickTobias/DBS-Pro/tree/v0.3) was used in:
+
+[Banijamali, M., Höjer, P., Nagy, A., Hååg, P., Gomero, E. P., Stiller, C., Kaminskyy, V. O., Ekman, S., Lewensohn, R., Karlström, A. E., Viktorsson, K., & Ahmadian, A. (2022). *Characterizing Single Extracellular Vesicles by Droplet Barcode Sequencing for Protein Analysis*. Journal of Extracellular Vesicles, e12277.][3]
 
 [1]: https://pubs.acs.org/doi/abs/10.1021/acs.bioconjchem.9b00548 "Stiller et al. 2019"
 [2]: https://doi.org/10.1038/s41467-019-11486-1 "Wu et al. 2019"
+[3]: https://doi.org/10.1002/jev2.12277
