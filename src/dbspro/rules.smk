@@ -134,12 +134,14 @@ rule dbs_cluster:
         reads="{sample}.dbs-raw.fastq.gz"
     log: "log_files/{sample}.starcode-dbs-cluster.log"
     threads: max(workflow.cores / nr_samples, 4)
+    params:
+        dist = config["dbs_cluster_dist"]
     shell:
         "pigz -cd {input.reads} |"
         " starcode"
         " --print-clusters"
         " -t {threads}"
-        " -d {config[dbs_cluster_dist]}"
+        " -d {params.dist}"
         " 2> {log} | pigz > {output.clusters}"
 
 
@@ -151,13 +153,16 @@ rule umi_cluster:
         abc_reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
         dbs_corrected="{sample}.dbs-corrected.fasta.gz"
     log: "log_files/{sample}.splitcluster-{target}.log"
+    params:
+        dist = config["abc_cluster_dist"],
+        length = config["umi_len"]
     shell:
         "dbspro splitcluster"
         " {input.dbs_corrected}"
         " {input.abc_reads}"
         " -o {output.reads}"
-        " -t {config[abc_cluster_dist]}"
-        " -l {config[umi_len]}"
+        " -t {params.dist}"
+        " -l {params.length}"
         " 2> {log}"
 
 
