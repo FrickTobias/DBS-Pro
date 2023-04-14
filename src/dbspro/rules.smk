@@ -74,6 +74,7 @@ rule extract_dbs:
         " -e {params.err_rate}"
         " -m {params.min_len}"
         " -M {params.max_len}"
+        " --max-n 0"
         " -j {threads}"
         " -o {output.reads}"
         " {input.reads}"
@@ -102,6 +103,7 @@ rule extract_abc_umi:
         " -M {params.max_len}"
         " -j {threads}"
         " -o {output.reads}"
+        " --max-n 0"
         " {input.reads}"
         " > {log}"
 
