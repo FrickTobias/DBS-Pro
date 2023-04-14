@@ -9,10 +9,9 @@ from pathlib import Path
 from typing import Iterator, Tuple, List, Set, Dict
 
 import dnaio
-from tqdm import tqdm
 from xopen import xopen
 
-from dbspro.utils import Summary, IUPAC_MAP
+from dbspro.utils import Summary, IUPAC_MAP, tqdm
 
 logger = logging.getLogger(__name__)
 

@@ -8,10 +8,9 @@ from typing import Dict, List, Iterable, Iterator
 
 import dnaio
 from dnaio import Sequence
-from tqdm import tqdm
 from umi_tools import UMIClusterer
 
-from dbspro.utils import Summary
+from dbspro.utils import Summary, tqdm
 
 logger = logging.getLogger(__name__)
 

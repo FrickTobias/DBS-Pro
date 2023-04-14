@@ -9,6 +9,12 @@ from typing import Set
 import dnaio
 import pandas as pd
 
+if sys.stderr.isatty():
+    from tqdm import tqdm
+else:
+    def tqdm(iterable, **kwargs):
+        return iterable
+
 logger = logging.getLogger(__name__)
 
 IUPAC_MAP = {

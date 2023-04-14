@@ -15,9 +15,8 @@ from pathlib import Path
 
 import dnaio
 import pandas as pd
-from tqdm import tqdm
 
-from dbspro.utils import Summary
+from dbspro.utils import Summary, tqdm
 
 logger = logging.getLogger(__name__)
 
