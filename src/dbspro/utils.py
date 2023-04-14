@@ -80,10 +80,10 @@ class Summary(Counter):
         # Print stats in columns
         for name, value in self.items():
             value_str = str(value)
-        if type(value) is int:
-            value_str = f"{value:>{value_width},}"
-        elif type(value) is float:
-            value_str = f"{value:>{value_width+4},.3f}"
+            if type(value) is int:
+                value_str = f"{value:>{value_width},}"
+            elif type(value) is float:
+                value_str = f"{value:>{value_width+4},.3f}"
 
             print(f"{name:<{max_name_width}} {value_str}", file=print_to)
         print("="*width, file=print_to)
