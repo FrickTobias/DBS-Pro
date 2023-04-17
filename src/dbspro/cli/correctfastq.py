@@ -6,7 +6,7 @@ import logging
 import os
 import statistics
 from pathlib import Path
-from typing import Iterator, Tuple, List, Set, Dict
+from typing import Iterator, Tuple, List, Set, Dict, Optional
 
 import dnaio
 from xopen import xopen
@@ -31,7 +31,7 @@ def add_arguments(parser):
         help="Output FASTA with corrected sequences."
     )
     parser.add_argument(
-        "-b", "--barcode-pattern", required=True,
+        "-b", "--barcode-pattern", 
         help="IUPAC string with bases forming pattern to match each corrected sequence too."
     )
 
@@ -49,7 +49,7 @@ def run_correctfastq(
     uncorrected_file: str,
     corrections_file: str,
     corrected_fasta: str,
-    barcode_pattern: str,
+    barcode_pattern: Optional[str],
 ):
     logger.info("Starting analysis")
     logger.info(f"Processing file: {corrections_file}")
@@ -59,7 +59,9 @@ def run_correctfastq(
     if os.stat(corrections_file).st_size == 0:
         logging.warning(f"File {corrections_file} is empty.")
 
-    pattern = [IUPAC_MAP[base] for base in barcode_pattern]
+    pattern = []
+    if barcode_pattern is not None:
+        pattern = [IUPAC_MAP[base] for base in barcode_pattern]
 
     corr_map = get_corrections(corrections_file, pattern, summary)
 
@@ -99,7 +101,7 @@ def get_corrections(corrections_file: Path, pattern: List[Set[str]], summary: Su
     stats = defaultdict(list)
     for cluster_seq, num_reads, raw_seqs in tqdm(parse_starcode_file(corrections_file), desc="Parsing clusters"):
         summary["Clusters"] += 1
-        if match_pattern(cluster_seq, pattern):
+        if not pattern or match_pattern(cluster_seq, pattern):
             summary["Clusters filtered"] += 1
             stats["read"].append(num_reads)
             stats["sequence"].append(len(raw_seqs))
