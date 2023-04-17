@@ -19,6 +19,8 @@ def main(commandline_args=None) -> int:
                         datefmt='%Y-%m-%d %H:%M:%S')
     parser = ArgumentParser(description=__doc__, prog="dbspro")
     parser.add_argument("-v", "--version", action="version", version=__version__)
+    parser.add_argument("--profile", action="store_true", default=False,
+                        help="Save profiling info to dbspro_<subcommand>.prof")
     subparsers = parser.add_subparsers()
 
     # Import each module that implements a subcommand and add a subparser for it.
@@ -38,16 +40,28 @@ def main(commandline_args=None) -> int:
     args = parser.parse_args(commandline_args)
     if not hasattr(args, "module"):
         parser.error("Please provide the name of a subcommand to run")
+        
+    module = args.module
+    subcommand = module.main
+    del args.module
+    profile = args.profile
+    del args.profile
+
+    module_name = module.__name__.split('.')[-1]
+
+    # Print settings for module
+    sys.stderr.write(f"SETTINGS FOR: {module_name} (version: {__version__})\n")
+    for object_variable, value in vars(args).items():
+        sys.stderr.write(f" {object_variable}: {value}\n")
+
+    if profile:
+        import cProfile
+        profile_file = f'dbspro_{module_name}.prof'
+        cProfile.runctx("subcommand(args)", globals(), dict(subcommand=subcommand, args=args),
+                        filename=profile_file)
+        logger.info(f"Writing profiling stats to '{profile_file}'.")
     else:
-        module = args.module
-        del args.module
-
-        # Print settings for module
-        sys.stderr.write(f"SETTINGS FOR: {module.__name__.split('.')[-1]} (version: {__version__})\n")
-        for object_variable, value in vars(args).items():
-            sys.stderr.write(f" {object_variable}: {value}\n")
-
-        module.main(args)
+        subcommand(args)
 
     return 0
 
