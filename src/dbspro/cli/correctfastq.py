@@ -31,7 +31,7 @@ def add_arguments(parser):
         help="Output FASTA with corrected sequences."
     )
     parser.add_argument(
-        "-b", "--barcode-pattern", 
+        "-b", "--barcode-pattern",
         help="IUPAC string with bases forming pattern to match each corrected sequence too."
     )
 

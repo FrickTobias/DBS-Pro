@@ -40,7 +40,7 @@ def main(commandline_args=None) -> int:
     args = parser.parse_args(commandline_args)
     if not hasattr(args, "module"):
         parser.error("Please provide the name of a subcommand to run")
-        
+
     module = args.module
     subcommand = module.main
     del args.module
