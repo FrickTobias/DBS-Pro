@@ -1,11 +1,14 @@
 name: CI Linux
 
 on: 
+  push:
+    branch:
+      - master
   pull_request:
     branch:
       - master
   schedule:
-    - cron: 0 7 * * 1,3,5
+    - cron: 0 7 * * 5
 
 jobs:
   run:
