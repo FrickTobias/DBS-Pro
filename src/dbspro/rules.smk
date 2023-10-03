@@ -12,7 +12,7 @@ abc = get_abcs(ABC_FILE_NAME)
 samples = pd.read_csv(SAMPLE_FILE_NAME, sep="\t").set_index("Sample", drop=False)
 
 # Get required values
-abc_len = len(abc["Sequence"][0]) - 1
+abc_len = len(abc["Sequence"].iloc[0]) - 1
 dbs_n = "N"*len(config["dbs"])
 
 wildcard_constraints:
