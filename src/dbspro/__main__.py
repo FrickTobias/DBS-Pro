@@ -37,7 +37,7 @@ def main(commandline_args=None) -> int:
         subparser.set_defaults(module=module)
         module.add_arguments(subparser)
 
-    args = parser.parse_args(commandline_args)
+    args, extra_args = parser.parse_known_args(commandline_args)
     if not hasattr(args, "module"):
         parser.error("Please provide the name of a subcommand to run")
 
@@ -48,6 +48,14 @@ def main(commandline_args=None) -> int:
     del args.profile
 
     module_name = module.__name__.split('.')[-1]
+
+    if extra_args:
+        # Re-parse extra arguments if module is not "run" to raise the expected error
+        if module_name != "run":
+            parser.parse_args(extra_args)
+
+        # Add extra arguments to args.snakemake_args for module "run"
+        args.snakemake_args = extra_args
 
     # Print settings for module
     sys.stderr.write(f"SETTINGS FOR: {module_name} (version: {__version__})\n")

@@ -3,6 +3,7 @@ import pytest
 import hashlib
 import os
 
+import pandas as pd
 from xopen import xopen
 from dbspro.__main__ import main as dbspro_main
 from dbspro.cli.init import init
@@ -58,7 +59,7 @@ def workdir(tmp_path_factory):
         print(f"{TESTDATA_SAMPLE3_READS},Sample3", file=f)
 
     init(workdir, [], ABC_SEQUENCES, sample_csv=sample_csv)
-    run(targets=[], workdir=workdir)
+    run(cores=4, workdir=workdir)
     return workdir
 
 
@@ -67,12 +68,14 @@ def test_output_files_exists(workdir, file):
     assert (workdir / file).is_file()
 
 
-def test_output_tsv_md5sum(workdir):
-    if "PYTHONHASHSEED" not in os.environ or os.environ["PYTHONHASHSEED"] != "1":
-        pytest.skip("Environment variable 'PYTHONHASHSEED' not '1'.")
-    else:
-        m = md5sum(workdir / "data.tsv.gz")
-        assert m == "b908621c64f067a3e0c1a986bee0fdcb"
+def test_output_tsv_correct(workdir):
+    data = pd.read_csv(workdir / "data.tsv.gz", sep="\t")
+
+    assert len(set(data["Sample"])) == 3, "Should be 3 samples"
+    assert len(set(data["Target"])) == 3, "Should be 3 targets"
+    assert len(data) == 2510, "Should be 2510 rows"
+    assert sum(data["ReadCount"]) == 52983, "Should be 52983 reads"
+    assert len(set(data["Barcode"])) == 2389, "Should be 2389 unique barcodes"
 
 
 def test_version_exit_code_zero():
