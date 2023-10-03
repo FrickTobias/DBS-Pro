@@ -59,10 +59,6 @@ def run_splitcluster(
     logger.info(f"Filtering reads not of length {required_length} bp.")
     summary = Summary()
 
-    # Read ABC fasta with UMI sequences and save read name and sequence.
-    with dnaio.open(uncorrected_umis, mode="r") as file:
-        name_to_umi_seq = {read.name: read.sequence for read in file if len(read.sequence) == required_length}
-
     logger.info(f"Starting clustering of UMIs within each DBS clusters using method: {clustering_method}")
     logger.info(f"Writing corrected reads to {output_fasta}")
 
@@ -72,7 +68,7 @@ def run_splitcluster(
 
     with dnaio.open(uncorrected_umis, mode="r") as reader, \
             dnaio.open(output_fasta, fileformat="fasta", mode="w") as writer:
-        
+
         dbs_umis = defaultdict(list)
         dbs_current = None
         for read in tqdm(reader, desc="Parsing reads"):
@@ -86,7 +82,7 @@ def run_splitcluster(
                 dbs_current = dbs
                 dbs_umis = defaultdict(list)
 
-            dbs_umis[umi].append(read.sequence)
+            dbs_umis[read.sequence].append(read.name)
 
     summary.print_stats(name=__name__)
 

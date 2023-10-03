@@ -203,14 +203,14 @@ rule tagfastq:
     log: "log_files/{sample}.trimmed-abc.tagged.log"
     shell:
         "dbspro tagfastq"
-        " {input.dbs}"
         " {input.abc_umi}"
+        " {input.dbs}"
         " -s ' '"
         " 2> {log}"
         " | "
         "paste - - - -"
         " | "
-        "awk -F ' ' '{printf(\"%s\t%s\n\",$3,$0);}'"
+        "awk -F ' ' '{{OFS=\"\t\"; print $3,$0}}'"
         " | "
         "sort -t $'\t' -k1,1"
         " | "
@@ -246,15 +246,14 @@ rule umi_cluster:
     output:
         reads="ABCs/{sample}.{target}-UMI-corrected.fasta.gz"
     input:
-        abc_reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
+        reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
     log: "log_files/{sample}.splitcluster-{target}.log"
     params:
         dist = config["abc_cluster_dist"],
         length = config["umi_len"]
     shell:
         "dbspro splitcluster"
-        " {input.dbs_corrected}"
-        " {input.abc_reads}"
+        " {input.reads}"
         " -o {output.reads}"
         " -t {params.dist}"
         " -l {params.length}"
@@ -266,13 +265,11 @@ rule integrate:
     output:
         data="{sample}.data.tsv.gz"
     input:
-        dbs_fasta="{sample}.dbs-corrected.fasta.gz",
         abc_fastas=expand("ABCs/{{sample}}.{abc}-UMI-corrected.fasta.gz", abc=abc['Target'])
     log: "log_files/{sample}.integrate.log"
     shell:
         "dbspro integrate"
         " -o {output.data}"
-        " {input.dbs_fasta}"
         " {input.abc_fastas}"
         " 2> {log}"
 

@@ -59,7 +59,10 @@ def run_correctfastq(
 
     logger.info("Annotating sequences and writing to output file.")
     input_format = determine_filetype(input)
+    logger.info(f"Input file format: {input_format}")
     output_format = determine_filetype(output) if str(output) != "-" else input_format
+    logger.info(f"Output file format: {output_format}")
+
     with ExitStack() as stack:
         reader = stack.enter_context(dnaio.open(input, mode="r", fileformat=input_format))
         writer = stack.enter_context(dnaio.open(output, mode="w", fileformat=output_format))
