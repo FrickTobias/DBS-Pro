@@ -62,7 +62,7 @@ def workdir(tmp_path_factory):
     return workdir
 
 
-@pytest.mark.parametrize("file", ["report.ipynb", "data.tsv.gz"])
+@pytest.mark.parametrize("file", ["report.ipynb", "data.tsv.gz", "multiqc_report.html"])
 def test_output_files_exists(workdir, file):
     assert (workdir / file).is_file()
 

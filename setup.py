@@ -29,8 +29,16 @@ setup(
             "pytest",
             ],
     },
-    package_data={"dbspro": ["rules.smk", "report_template.ipynb", "dbspro.yaml", "config.schema.yaml",
-                             "ABC-sequences.fasta"]},
+    package_data={
+        "dbspro": [
+            "rules.smk", 
+            "report_template.ipynb", 
+            "dbspro.yaml", 
+            "config.schema.yaml",
+            "ABC-sequences.fasta",
+            "multiqc_config.yaml",
+            ],
+    },
     packages=find_namespace_packages("src"),
     entry_points={"console_scripts": ["dbspro = dbspro.__main__:main"]},
     classifiers=[

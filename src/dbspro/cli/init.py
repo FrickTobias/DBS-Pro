@@ -7,12 +7,13 @@ import os.path
 import sys
 import dnaio
 from pathlib import Path
-from importlib_resources import read_binary
+from importlib.resources import files
 from typing import List, Iterator, Tuple
 
 logger = logging.getLogger(__name__)
 
 CONFIGURATION_FILE_NAME = "dbspro.yaml"
+MULTIQC_CONFIG_NAME = "multiqc_config.yaml"
 ABC_FILE_NAME = "ABC-sequences.fasta"
 ACCEPTED_FILE_EXT = ".fastq.gz"
 SAMPLE_FILE_NAME = "samples.tsv"
@@ -74,7 +75,7 @@ def create_and_populate_analysis_directory(directory: Path, reads: List[Path], a
         sys.exit(1)
 
     # Write the configuration file
-    configuration = read_binary("dbspro", CONFIGURATION_FILE_NAME)
+    configuration = files("dbspro").joinpath(CONFIGURATION_FILE_NAME).read_bytes()
     with (directory / CONFIGURATION_FILE_NAME).open("wb") as f:
         f.write(configuration)
 

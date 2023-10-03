@@ -1,0 +1,16 @@
+top_modules:
+  - cutadapt:
+      name: "Cutadapt (Extract ABC-UMI)"
+      path_filters:
+        - "*cutadapt-extract-abc-umi.log"
+  - cutadapt:
+      name: "Cutadapt (Extract DBS)"
+      path_filters:
+        - "*cutadapt-extract-dbs.log"
+
+run_modules:
+  - fastqc
+  - cutadapt
+
+extra_fn_clean_trim:
+  - ".subsampled"

@@ -17,12 +17,8 @@ logger = logging.getLogger(__name__)
 
 def add_arguments(parser):
     parser.add_argument(
-        "corrected_dbs_fasta", type=Path,
-        help="Input FASTA with corrected DBS sequences"
-    )
-    parser.add_argument(
         "uncorrected_umi_fastq", type=Path,
-        help="Input FASTQ for demultiplexed ABC with uncorrected UMI sequences."
+        help="Input FASTQ for demultiplexed ABC with uncorrected UMI sequences and corrected DBS sequence in header."
     )
     parser.add_argument(
         "-o", "--output-fasta", default="-", type=Path,
@@ -45,7 +41,6 @@ def add_arguments(parser):
 
 def main(args):
     run_splitcluster(
-        corrected_barcodes=args.corrected_dbs_fasta,
         uncorrected_umis=args.uncorrected_umi_fastq,
         output_fasta=args.output_fasta,
         dist_threshold=args.threshold,
@@ -55,7 +50,6 @@ def main(args):
 
 
 def run_splitcluster(
-    corrected_barcodes: str,
     uncorrected_umis: str,
     output_fasta: str,
     dist_threshold: int,
@@ -69,13 +63,6 @@ def run_splitcluster(
     with dnaio.open(uncorrected_umis, mode="r") as file:
         name_to_umi_seq = {read.name: read.sequence for read in file if len(read.sequence) == required_length}
 
-    logger.info("Assigning ABC reads to DBS clusters")
-
-    with dnaio.open(corrected_barcodes, mode="r") as file:
-        dbs_groups = assign_to_dbs(file, name_to_umi_seq, summary)
-
-    summary["DBS clusters linked to ABC"] = len(dbs_groups)
-
     logger.info(f"Starting clustering of UMIs within each DBS clusters using method: {clustering_method}")
     logger.info(f"Writing corrected reads to {output_fasta}")
 
@@ -83,10 +70,23 @@ def run_splitcluster(
     # Based on https://umi-tools.readthedocs.io/en/latest/API.html
     clusterer = UMIClusterer(cluster_method=clustering_method)
 
-    with dnaio.open(output_fasta, fileformat="fasta", mode="w") as output:
-        for _, umis in tqdm(dbs_groups.items(), desc="Correcting UMIs"):
-            for read in correct_umis(umis, clusterer, dist_threshold, summary):
-                output.write(read)
+    with dnaio.open(uncorrected_umis, mode="r") as reader, \
+            dnaio.open(output_fasta, fileformat="fasta", mode="w") as writer:
+        
+        dbs_umis = defaultdict(list)
+        dbs_current = None
+        for read in tqdm(reader, desc="Parsing reads"):
+            # Get DBS sequence
+            dbs = read.name.split(" ")[-1]
+            # If new DBS sequence, cluster UMIs and write to output
+            if dbs != dbs_current:
+                if dbs_current:
+                    for read in correct_umis(dbs_umis, clusterer, dist_threshold, summary):
+                        writer.write(read)
+                dbs_current = dbs
+                dbs_umis = defaultdict(list)
+
+            dbs_umis[umi].append(read.sequence)
 
     summary.print_stats(name=__name__)
 
@@ -106,37 +106,3 @@ def correct_umis(umis: AliasType, clusterer: UMIClusterer, threshold: int, summa
         for seq in seqs:
             for read_name in umis[seq]:
                 yield Sequence(read_name, canonical_sequnce)
-
-
-def assign_to_dbs(file: Iterable[Sequence], name_to_umi: Dict[str, str], summary: Summary) -> Dict[str, AliasType]:
-    """
-    Create structure for storing DBS, UMI and read name
-
-           {DBS1:{UMI1:[name1, name2, ...],
-                  UMI2:[name3, ...],
-                  ...
-                  }
-            DBS2:{UMI1:[name1, name2, ...],
-                  UMI2:[name3, ...],
-                  ...
-                  }
-           }
-    """
-    dbs_groups = defaultdict(lambda: defaultdict(list))
-    for read in tqdm(file, desc="Assigning DBS"):
-        summary["DBS reads"] += 1
-        # Get sequences
-        dbs = read.sequence
-        umi = name_to_umi.get(read.name)
-
-        if umi is None:
-            continue
-
-        dbs_groups[dbs][umi].append(read.name)
-
-        summary["DBS reads matched to ABCs"] += 1
-
-    if summary["DBS reads"]:
-        summary["DBS reads matched to ABCs (%)"] = 100 * summary["DBS reads matched to ABCs"] / summary["DBS reads"]
-
-    return dbs_groups

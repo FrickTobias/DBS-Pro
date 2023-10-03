@@ -15,9 +15,11 @@ samples = pd.read_csv(SAMPLE_FILE_NAME, sep="\t").set_index("Sample", drop=False
 abc_len = len(abc["Sequence"][0]) - 1
 dbs_n = "N"*len(config["dbs"])
 
+wildcard_constraints:
+    sample="\w+"
 
 rule all:
-    input: 'report.html', 'data.tsv.gz'
+    input: 'report.html', 'data.tsv.gz', 'multiqc_report.html'
 
 
 if config["h1"] is None: # For PBA input
@@ -54,6 +56,21 @@ rule subsample:
             shell("ln -s {input.reads} {output.reads}")
 
 
+rule fastqc:
+    output:
+        html="log_files/{sample}_fastqc.html",
+        zip="log_files/{sample}_fastqc.zip"
+    input:
+        reads=f"{{sample}}.{do_sampling}fastq.gz"
+    log: "log_files/{sample}_fastqc.log"
+    shell:
+        "fastqc"
+        " -o log_files"
+        " -t 1"
+        " {input.reads}"
+        " &> {log}"
+
+
 rule extract_dbs:
     """Extract DBS and trim handle between DBS and ABC."""
     output:
@@ -79,6 +96,59 @@ rule extract_dbs:
         " -o {output.reads}"
         " {input.reads}"
         " > {log}"
+
+
+rule fastqc_dbs:
+    output:
+        html="log_files/{sample}.dbs-raw_fastqc.html",
+        zip="log_files/{sample}.dbs-raw_fastqc.zip"
+    input:
+        reads="{sample}.dbs-raw.fastq.gz"
+    log: "log_files/{sample}.dbs-raw_fastqc.log"
+    shell:
+        "fastqc"
+        " -o log_files"
+        " -t 1"
+        " {input.reads}"
+        " &> {log}"
+
+
+rule dbs_cluster:
+    """Cluster DBS sequence using starcode for error correction."""
+    output:
+        clusters="{sample}.dbs-clusters.txt.gz"
+    input:
+        reads="{sample}.dbs-raw.fastq.gz"
+    log: "log_files/{sample}.starcode-dbs-cluster.log"
+    threads: max(workflow.cores / nr_samples, 4)
+    params:
+        dist = config["dbs_cluster_dist"]
+    shell:
+        "pigz -cd {input.reads} |"
+        " starcode"
+        " --print-clusters"
+        " -t {threads}"
+        " -d {params.dist}"
+        " 2> {log} | pigz > {output.clusters}"
+
+
+rule correct_dbs:
+    """Combine DBS clustering results with original FASTA for error correction."""
+    output:
+        reads="{sample}.dbs-corrected.fasta.gz"
+    input:
+        reads="{sample}.dbs-raw.fastq.gz",
+        clusters="{sample}.dbs-clusters.txt.gz"
+    log: "log_files/{sample}.correctfastq-dbs.log"
+    params:
+        dbs = config['dbs']
+    shell:
+        "dbspro correctfastq"
+        " {input.reads}"
+        " {input.clusters}"
+        " --output-fasta {output.reads}"
+        " --barcode-pattern {params.dbs}"
+        " 2> {log}"
 
 
 rule extract_abc_umi:
@@ -108,12 +178,55 @@ rule extract_abc_umi:
         " > {log}"
 
 
+rule fastqc_abc_umi:
+    output:
+        html="log_files/{sample}.trimmed-abc_fastqc.html",
+        zip="log_files/{sample}.trimmed-abc_fastqc.zip"
+    input:
+        reads="{sample}.trimmed-abc.fastq.gz"
+    log: "log_files/{sample}.trimmed-abc_fastqc.log"
+    shell:
+        "fastqc"
+        " -o log_files"
+        " -t 1"
+        " {input.reads}"
+        " &> {log}"
+
+
+rule tagfastq:
+    """Tag ABC and UMI sequences with DBS sequence and sort by barcode."""
+    output:
+        reads="{sample}.trimmed-abc.tagged.fastq.gz"
+    input:
+        dbs="{sample}.dbs-corrected.fasta.gz",
+        abc_umi="{sample}.trimmed-abc.fastq.gz"
+    log: "log_files/{sample}.trimmed-abc.tagged.log"
+    shell:
+        "dbspro tagfastq"
+        " {input.dbs}"
+        " {input.abc_umi}"
+        " -s ' '"
+        " 2> {log}"
+        " | "
+        "paste - - - -"
+        " | "
+        "awk -F ' ' '{printf(\"%s\t%s\n\",$3,$0);}'"
+        " | "
+        "sort -t $'\t' -k1,1"
+        " | "
+        "cut -f 2-"
+        " | "
+        "tr '\t' '\n'"
+        " | "
+        "pigz > {output.reads}"
+
+
 rule demultiplex_abc:
     """Demultiplexes ABC sequnces and trims it to give ABC-specific UMI fastq files."""
     output:
         reads=touch(expand("ABCs/{{sample}}.{name}-UMI-raw.fastq.gz", name=abc['Target']))
     input:
-        reads="{sample}.trimmed-abc.fastq.gz"
+        reads="{sample}.trimmed-abc.tagged.fastq.gz"
     log: "log_files/{sample}.cutadapt-id-abc.log"
     params:
         file=config["abc_file"],
@@ -128,32 +241,12 @@ rule demultiplex_abc:
         " > {log}"
 
 
-rule dbs_cluster:
-    """Cluster DBS sequence using starcode for error correction."""
-    output:
-        clusters="{sample}.dbs-clusters.txt.gz"
-    input:
-        reads="{sample}.dbs-raw.fastq.gz"
-    log: "log_files/{sample}.starcode-dbs-cluster.log"
-    threads: max(workflow.cores / nr_samples, 4)
-    params:
-        dist = config["dbs_cluster_dist"]
-    shell:
-        "pigz -cd {input.reads} |"
-        " starcode"
-        " --print-clusters"
-        " -t {threads}"
-        " -d {params.dist}"
-        " 2> {log} | pigz > {output.clusters}"
-
-
 rule umi_cluster:
     """Cluster UMIs using UMI-tools API for each DBS and ABC to error correct them."""
     output:
         reads="ABCs/{sample}.{target}-UMI-corrected.fasta.gz"
     input:
         abc_reads="ABCs/{sample}.{target}-UMI-raw.fastq.gz",
-        dbs_corrected="{sample}.dbs-corrected.fasta.gz"
     log: "log_files/{sample}.splitcluster-{target}.log"
     params:
         dist = config["abc_cluster_dist"],
@@ -165,25 +258,6 @@ rule umi_cluster:
         " -o {output.reads}"
         " -t {params.dist}"
         " -l {params.length}"
-        " 2> {log}"
-
-
-rule correct_dbs:
-    """Combine DBS clustering results with original FASTA for error correction."""
-    output:
-        reads="{sample}.dbs-corrected.fasta.gz"
-    input:
-        reads="{sample}.dbs-raw.fastq.gz",
-        clusters="{sample}.dbs-clusters.txt.gz"
-    log: "log_files/{sample}.correctfastq-dbs.log"
-    params:
-        dbs = config['dbs']
-    shell:
-        "dbspro correctfastq"
-        " {input.reads}"
-        " {input.clusters}"
-        " --output-fasta {output.reads}"
-        " --barcode-pattern {params.dbs}"
         " 2> {log}"
 
 
@@ -230,3 +304,17 @@ rule make_report:
             " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> >(tee {log} >&2);"
             " jupyter nbconvert --to html {output.notebook} 2>> >(tee {log} >&2)"
          )
+
+rule multiqc:
+    """Make multiqc report"""
+    output:
+        html="multiqc_report.html",
+        dir=directory("multiqc_data")
+    input:
+        expand(rules.fastqc.output.zip, sample=samples["Sample"]),
+        expand(rules.fastqc_dbs.output.zip, sample=samples["Sample"]),
+        expand(rules.fastqc_abc_umi.output.zip, sample=samples["Sample"]),
+        expand(rules.extract_dbs.output.reads, sample=samples["Sample"]),
+        expand(rules.extract_abc_umi.output.reads, sample=samples["Sample"]),
+    shell:
+        "multiqc -f log_files &> multiqc_report.html.log"
