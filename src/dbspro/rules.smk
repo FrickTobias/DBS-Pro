@@ -1,8 +1,9 @@
 import pandas as pd
+from importlib.resources import files, as_file
 from snakemake.utils import validate
 
 from dbspro.utils import get_abcs
-from dbspro.cli.init import CONFIGURATION_FILE_NAME, ABC_FILE_NAME, SAMPLE_FILE_NAME
+from dbspro.cli.init import CONFIGURATION_FILE_NAME, ABC_FILE_NAME, SAMPLE_FILE_NAME, MULTIQC_CONFIG_NAME
 
 # Read sample and handles files.
 configfile: CONFIGURATION_FILE_NAME
@@ -294,13 +295,22 @@ rule make_report:
          data="data.tsv.gz"
     log: "log_files/make_report.log"
     run:
-        import pkg_resources
-        report_path = pkg_resources.resource_filename("dbspro", 'report_template.ipynb')
-        shell(
-            "jupyter nbconvert --ClearMetadataPreprocessor.enabled=True --to notebook {report_path} --output {output.notebook} --output-dir . 2>> >(tee {log} >&2);"
-            " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> >(tee {log} >&2);"
-            " jupyter nbconvert --to html {output.notebook} 2>> >(tee {log} >&2)"
-         )
+        with as_file(file("dbspro").joinpath("report_template.ipynb")) as report_path
+            shell(
+                "jupyter nbconvert --ClearMetadataPreprocessor.enabled=True --to notebook {report_path} --output {output.notebook} --output-dir . 2>> >(tee {log} >&2);"
+                " jupyter nbconvert --execute --to notebook --inplace {output.notebook} 2>> >(tee {log} >&2);"
+                " jupyter nbconvert --to html {output.notebook} 2>> >(tee {log} >&2)"
+            )
+
+
+def get_multiqc_config():
+    """Get config for multiqc"""
+    # Use user config if exists in workdir, otherwise use default config
+    if os.path.exists(MULTIQC_CONFIG_NAME):
+        return MULTIQC_CONFIG_NAME
+    else:
+        return files("dbspro").joinpath(MULTIQC_CONFIG_NAME)
+
 
 rule multiqc:
     """Make multiqc report"""
@@ -313,5 +323,7 @@ rule multiqc:
         expand(rules.fastqc_abc_umi.output.zip, sample=samples["Sample"]),
         expand(rules.extract_dbs.output.reads, sample=samples["Sample"]),
         expand(rules.extract_abc_umi.output.reads, sample=samples["Sample"]),
+    params:
+        config=get_multiqc_config(),
     shell:
-        "multiqc -f log_files &> multiqc_report.html.log"
+        "multiqc -c {params.config} -f log_files &> multiqc_report.html.log"

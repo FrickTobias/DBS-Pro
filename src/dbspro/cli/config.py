@@ -7,12 +7,12 @@ Update configuration file. If no --set option is given the current settings are 
 import sys
 import os
 import logging
+from importlib.resources import files, as_file
 from typing import List, Tuple, Dict
 from pathlib import Path
 
 from ruamel.yaml import YAML
 from snakemake.utils import validate
-import pkg_resources
 
 from dbspro.utils import get_abcs
 
@@ -106,8 +106,8 @@ def change_config(filename: Path, changes_set: List[Tuple[str, str]]):
         update_configs(configs, key, value)
 
     # Confirm that configs is valid.
-    schema_path = pkg_resources.resource_filename("dbspro", SCHEMA_FILE)
-    validate(configs, schema_path)
+    with as_file(files("dbspro").joinpath(SCHEMA_FILE)) as schema_path:
+        validate(configs, schema_path)
 
     # Write first to temporary file then overwrite filename.
     tmpfile = str(filename) + ".tmp"
