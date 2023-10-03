@@ -1,6 +1,6 @@
 # Whenever this file is updated, you need to regenerate *.lock files. Run
 #
-#   conda-lock -f environment.yml --filename-template "environment.{platform}.lock"
+#   conda-lock -p osx-64 -p linux-64 -f environment.yml --filename-template "environment.{platform}.lock"
 #
 # conda-lock is avialable from pip
 #
@@ -34,6 +34,3 @@ dependencies:
   - bioconda::starcode=1.4
   - conda-forge::tqdm
   - bioconda::umi_tools>=1.1.1
-platforms:
-  - linux-64
-  - osx-64
