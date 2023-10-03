@@ -7,6 +7,14 @@ top_modules:
       name: "Cutadapt (Extract DBS)"
       path_filters:
         - "*cutadapt-extract-dbs.log"
+  - fastqc:
+      name: "FastQC (Extract ABC-UMI)"
+      path_filters:
+        - "*trimmed-abc_fastqc.zip"
+  - fastqc:
+      name: "FastQC (Extract DBS)"
+      path_filters:
+        - "*dbs-raw_fastqc.zip"
 
 run_modules:
   - fastqc
@@ -14,3 +22,4 @@ run_modules:
 
 extra_fn_clean_trim:
   - ".subsampled"
+  - ".dbs-raw"
