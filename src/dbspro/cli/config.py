@@ -68,7 +68,7 @@ def print_construct(file: Path):
     h2 = Handle("H2", configs["h2"])
     umi = Handle("UMI", "N"*configs["umi_len"])
     abcs = get_abcs(configs["abc_file"])
-    abc = Handle("ABC", "X"*len(abcs["Sequence"][0].strip("^")))
+    abc = Handle("ABC", "X"*len(abcs["Sequence"].iloc[0].strip("^")))
     h3 = Handle("H3", configs["h3"])
 
     handles = [h1, dbs, h2, abc, umi, h3] if configs["h1"] is not None else [dbs, h2, abc, umi, h3]

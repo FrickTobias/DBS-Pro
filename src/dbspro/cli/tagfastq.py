@@ -115,11 +115,9 @@ class BufferedFASTAReader:
 
 def determine_filetype(file):
     # Determine if the file is a FASTQ or FASTA file
-    with xopen(file) as f:
-        first_line = next(f)
-        if first_line.startswith(">"):
-            return "fasta"
-        elif first_line.startswith("@"):
-            return "fastq"
-        else:
-            raise ValueError(f"File {file} is neither FASTQ or FASTA.")
+    file_name = str(file).strip(".gz")
+    if file_name.endswith(".fasta") or file_name.endswith(".fa"):
+        return "fasta"
+    elif file_name.endswith(".fastq") or file_name.endswith(".fq"):
+        return "fastq"
+    raise ValueError(f"File {file} is neither FASTQ or FASTA.")
