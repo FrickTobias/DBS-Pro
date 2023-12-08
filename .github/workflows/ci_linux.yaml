@@ -22,6 +22,11 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
+      - name: Clone test data
+        uses: actions/checkout@v2
+        with:
+          repository: AfshinLab/DBS-Pro_testdata
+          path: testdata
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: testenv
@@ -39,16 +44,9 @@ jobs:
           conda activate testenv
           flake8 src/ tests/
           flake8 --select=W292 --filename '*.yaml,*.yml'
-      - name: Clone test data
-        uses: actions/checkout@v2
-        with:
-          repository: AfshinLab/DBS-Pro_testdata
-          path: testdata
       - name: Run tests
         run: |
-          ls -l
-          ls -l src/dbspro
           conda activate testenv
           # Required to make umi-tools output consistent. 
           export PYTHONHASHSEED=1 
-          pytest -v tests/
+          pytst -v tests/
