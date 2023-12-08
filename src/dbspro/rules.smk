@@ -325,7 +325,8 @@ rule generate_h5ad:
     input:
         data = "{sample}.data.tsv.gz"
     threads: workflow.cores
-    script: "scripts/generate_h5ad.py"
+    script: 
+        "scripts/generate_h5ad.py"
 
 
 rule get_preseq_vals:

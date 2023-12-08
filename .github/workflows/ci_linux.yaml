@@ -46,6 +46,8 @@ jobs:
           path: testdata
       - name: Run tests
         run: |
+          ls -l
+          ls -l src/dbspro
           conda activate testenv
           # Required to make umi-tools output consistent. 
           export PYTHONHASHSEED=1 
