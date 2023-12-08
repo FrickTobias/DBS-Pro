@@ -1,5 +1,23 @@
 """
-DBS-Pro is a pipeline for processing DBS-Pro data.
+A pipeline for processing DBS-Pro data.
+
+Workflow:
+
+1. Initiate a new analysis:
+
+    dbspro init -h
+
+2. Change the config file to your liking:
+
+    dbspro config -h
+
+3. Run the pipeline:
+
+    dbspro run -h
+
+For more information about the pipeline, see the documentation at
+https://github.com/FrickTobias/DBS-Pro
+
 """
 import sys
 import logging
@@ -17,7 +35,7 @@ def main(commandline_args=None) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(module)s - %(levelname)s: %(message)s",
                         datefmt='%Y-%m-%d %H:%M:%S')
-    parser = ArgumentParser(description=__doc__, prog="dbspro")
+    parser = ArgumentParser(description=__doc__, prog="dbspro", formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-v", "--version", action="version", version=__version__)
     parser.add_argument("--profile", action="store_true", default=False,
                         help="Save profiling info to dbspro_<subcommand>.prof")
