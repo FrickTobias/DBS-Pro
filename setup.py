@@ -11,13 +11,14 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     package_dir={"": "src"},
     install_requires=[
         "pysam",
         "pandas",
         "numpy",
         "dnaio",
+        "xopen",
         "tqdm",
         "snakemake",
         "importlib_resources; python_version<'3.7'",
@@ -31,9 +32,9 @@ setup(
     },
     package_data={
         "dbspro": [
-            "rules.smk", 
-            "report_template.ipynb", 
-            "dbspro.yaml", 
+            "rules.smk",
+            "report_template.ipynb",
+            "dbspro.yaml",
             "config.schema.yaml",
             "ABC-sequences.fasta",
             "multiqc_config.yaml",

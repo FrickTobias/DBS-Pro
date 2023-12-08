@@ -4,7 +4,7 @@ Split ABC FASTQ with UMIs based on DBS cluster and cluster UMIs for each partion
 from collections import defaultdict
 import logging
 from pathlib import Path
-from typing import Dict, List, Iterable, Iterator
+from typing import Dict, List, Iterator
 
 import dnaio
 from dnaio import Sequence

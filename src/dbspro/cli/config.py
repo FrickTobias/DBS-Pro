@@ -38,19 +38,32 @@ STANDARD_CONSTRUCTS = {
         ("h2", "ACCTGAGACATCATAATAGCA"),
         ("h3", "CATTACTAGGAATCACACGCAGAT"),
         ("dbs", "NNNNNNNNNNNNNNN"),
-    ]
+    ],
+    "dbspro_v3": [
+        ("h1", "GGCGTTACAGCATGGATGTGG"),
+        ("h2", "GCGCAGTTACATGAGACTCTGCCTGGCCGCGATTGCAGATGTTA"),
+        ("h3", "TGGCGTGGAGTGCAGGTATAC"),
+        ("dbs", "BDVHBDVHBDVHBDVHBDVH"),
+    ],
 }
 
 
 def main(args):
-    if args.set or args.construct is not None:
-        if args.construct is not None:
-            args.set.extend(STANDARD_CONSTRUCTS[args.construct])
-        change_config(args.file, args.set)
-    elif args.print_construct:
-        print_construct(args.file)
+    run_config(args.file, args.set, args.construct, args.print_construct)
+
+
+def run_config(file: Path, change_set: List[Tuple] = None, construct: str = None, print_construct: bool = False):
+    if change_set is None:
+        change_set = []
+
+    if change_set or construct is not None:
+        if construct is not None:
+            change_set.extend(STANDARD_CONSTRUCTS[construct])
+        change_config(file, change_set)
+    elif print_construct:
+        print_construct(file)
     else:
-        print_config(args.file)
+        print_config(file)
 
 
 def print_config(file: Path):

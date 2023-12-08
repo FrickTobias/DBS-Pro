@@ -10,13 +10,13 @@ import logging
 from collections import defaultdict
 import os
 import sys
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional, Set
 from pathlib import Path
 
 import dnaio
 import pandas as pd
 
-from dbspro.utils import Summary, tqdm
+from dbspro.utils import Summary, tqdm, IUPAC_MAP
 
 logger = logging.getLogger(__name__)
 
@@ -30,25 +30,35 @@ def add_arguments(parser):
         "-o", "--output", default=sys.stdout, type=Path,
         help="Output TSV to file instead of stdout."
     )
+    parser.add_argument(
+        "-b", "--barcode-pattern",
+        help="IUPAC string with bases forming pattern to match each corrected sequence too."
+    )
 
 
 def main(args):
     run_analysis(
         target_files=args.target_files,
         output=args.output,
+        barcode_pattern=args.barcode_pattern,
     )
 
 
 def run_analysis(
     target_files: List[str],
     output: str,
+    barcode_pattern: Optional[str],
 ):
-    # Barcode processing
     logger.info("Starting analysis")
     summary = Summary()
 
+    pattern = []
+    if barcode_pattern is not None:
+        pattern = [IUPAC_MAP[base] for base in barcode_pattern]
+
     # Set names for ABCs. Creates dict with file names as keys and selected names as values.
-    target_file_to_name = {file: os.path.basename(file).split('-')[0].split(".")[-1] for file in target_files}
+    target_file_to_name = {file: os.path.basename(file).split('.')[1] for file in target_files}
+
     sample_name = os.path.basename(target_files[0]).split(".")[0]
     logging.info(f"Found sample {sample_name}.")
 
@@ -62,6 +72,11 @@ def run_analysis(
 
     # Attach sample info
     df["Sample"] = sample_name
+
+    # Filter by barcode pattern
+    if pattern:
+        logger.info("Filtering by barcode pattern")
+        df = df[df.index.map(lambda x: match_pattern(x, pattern))]
 
     logger.info("Sorting data")
     df = df.sort_values(["Barcode", "Target", "UMI"])
@@ -97,3 +112,10 @@ def make_dataframe(results: Dict[Tuple[str, str, str], int]) -> pd.DataFrame:
     # Create dataframe with barcode as index and columns with ABC data.
     cols = ["Barcode", "Target", "UMI", "ReadCount"]
     return pd.DataFrame(output, columns=cols).set_index("Barcode", drop=True)
+
+
+def match_pattern(sequence: str, pattern: List[Set[str]]) -> bool:
+    if len(sequence) != len(pattern):
+        return False
+
+    return all([base in allowed_bases for base, allowed_bases in zip(sequence, pattern)])
