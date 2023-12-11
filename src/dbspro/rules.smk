@@ -9,14 +9,6 @@ from snakemake.utils import validate
 from dbspro.utils import get_abcs
 from dbspro.cli.init import CONFIGURATION_FILE_NAME, ABC_FILE_NAME, SAMPLE_FILE_NAME, MULTIQC_CONFIG_NAME
 
-import os
-print("BASEDIR", workflow.basedir)
-shell(f"ls -l {workflow.basedir}")
-shell(f"ls -l {workflow.basedir}/scripts")
-print("Exists 1:", os.path.exists("scripts/generate_h5ad.py"))
-print("Exists 2:", os.path.exists(files("dbspro").joinpath("scripts/generate_h5ad.py")))
-print("Exists 3:", os.path.exists(os.path.join(workflow.basedir, "scripts/generate_h5ad.py")))
-
 # Read sample and handles files.
 configfile: CONFIGURATION_FILE_NAME
 validate(config, "config.schema.yaml")
