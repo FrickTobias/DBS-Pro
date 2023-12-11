@@ -5,3 +5,6 @@ build/
 
 .idea
 /src/dbspro/_version.py
+*testdata*
+.DS_Store
+.vscode/
