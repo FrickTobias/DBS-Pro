@@ -4,9 +4,11 @@ on:
   push:
     branch:
       - master
+      - dev
   pull_request:
     branch:
       - master
+      - dev
   schedule:
     - cron: 0 7 * * 5
 
@@ -20,6 +22,11 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
+      - name: Clone test data
+        uses: actions/checkout@v2
+        with:
+          repository: AfshinLab/DBS-Pro_testdata
+          path: testdata
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: testenv
@@ -37,13 +44,6 @@ jobs:
           conda activate testenv
           flake8 src/ tests/
           flake8 --select=W292 --filename '*.yaml,*.yml'
-      - name: Download test dataset
-        env:
-          testdata_version: "0.4"
-        run: |
-          wget -nv https://export.uppmax.uu.se/uppstore2018173/DBS-Pro-testdata-${testdata_version}.tar.gz
-          tar xf DBS-Pro-testdata-${testdata_version}.tar.gz
-          ln -s DBS-Pro-testdata-${testdata_version} testdata
       - name: Run tests
         run: |
           conda activate testenv

@@ -1,5 +1,23 @@
 """
-DBS-Pro is a pipeline for processing DBS-Pro data.
+A pipeline for processing DBS-Pro data.
+
+Workflow:
+
+1. Initiate a new analysis:
+
+    dbspro init -h
+
+2. Change the config file to your liking:
+
+    dbspro config -h
+
+3. Run the pipeline:
+
+    dbspro run -h
+
+For more information about the pipeline, see the documentation at
+https://github.com/FrickTobias/DBS-Pro
+
 """
 import sys
 import logging
@@ -17,7 +35,7 @@ def main(commandline_args=None) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(module)s - %(levelname)s: %(message)s",
                         datefmt='%Y-%m-%d %H:%M:%S')
-    parser = ArgumentParser(description=__doc__, prog="dbspro")
+    parser = ArgumentParser(description=__doc__, prog="dbspro", formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-v", "--version", action="version", version=__version__)
     parser.add_argument("--profile", action="store_true", default=False,
                         help="Save profiling info to dbspro_<subcommand>.prof")
@@ -37,7 +55,7 @@ def main(commandline_args=None) -> int:
         subparser.set_defaults(module=module)
         module.add_arguments(subparser)
 
-    args = parser.parse_args(commandline_args)
+    args, extra_args = parser.parse_known_args(commandline_args)
     if not hasattr(args, "module"):
         parser.error("Please provide the name of a subcommand to run")
 
@@ -48,6 +66,14 @@ def main(commandline_args=None) -> int:
     del args.profile
 
     module_name = module.__name__.split('.')[-1]
+
+    if extra_args:
+        # Re-parse extra arguments if module is not "run" to raise the expected error
+        if module_name != "run":
+            parser.parse_args(extra_args)
+
+        # Add extra arguments to args.snakemake_args for module "run"
+        args.snakemake_args = extra_args
 
     # Print settings for module
     sys.stderr.write(f"SETTINGS FOR: {module_name} (version: {__version__})\n")

@@ -116,13 +116,35 @@ and check the current (default) configs using
 dbspro config
 ```
 
-Any changes to the configs should be primaraly be done through the `dbspro config` command to validate the parameters. You can check the construct layout by running `dbspro config --print-construct`. Once the configs are updated you are ready to run the full analysis using this command.
+Any changes to the configs should be primaraly be done through the `dbspro config` command to validate the parameters. You can check the construct layout by running `dbspro config --print-construct`. Some standard constructs are also defined, see [Standard constructs](#standard-constructs). Once the configs are updated you are ready to run the full analysis using this command.
 
 ```{bash}
 dbspro run
 ```
 
 For more information on how to run use `dbspro run -h`.
+### Output files
+
+The main output is a TSV file `data.tsv.gz` with the following columns: 
+
+| Column name | Description |
+| ----------- | ----------- |
+| `Barcode` | The DBS sequence |
+| `Target` | Target name (accuired from ABC FASTA headers) |
+| `UMI` | The UMI sequence |
+| `ReadCount` | Number of reads with this DBS, Target and UMI combination |
+| `Sample` | Sample name |
+
+For convenience, [anndata](https://anndata.readthedocs.io/en/latest/index.html) `h5ad` files with count matrices are also generated for each sample. These can be used for downstream analysis using [Scanpy](https://scanpy.readthedocs.io/en/stable/). To import the data use the following code:
+
+```
+import scanpy as sc
+adata = sc.read_h5ad("mysample.h5ad")
+adata
+```
+
+The pipeline also generates a report `report.html` with some basic QC metrics. 
+
 
 ### Standard constructs
 

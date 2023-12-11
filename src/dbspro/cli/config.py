@@ -7,12 +7,12 @@ Update configuration file. If no --set option is given the current settings are 
 import sys
 import os
 import logging
+from importlib.resources import files, as_file
 from typing import List, Tuple, Dict
 from pathlib import Path
 
 from ruamel.yaml import YAML
 from snakemake.utils import validate
-import pkg_resources
 
 from dbspro.utils import get_abcs
 
@@ -38,19 +38,32 @@ STANDARD_CONSTRUCTS = {
         ("h2", "ACCTGAGACATCATAATAGCA"),
         ("h3", "CATTACTAGGAATCACACGCAGAT"),
         ("dbs", "NNNNNNNNNNNNNNN"),
-    ]
+    ],
+    "dbspro_v3": [
+        ("h1", "GGCGTTACAGCATGGATGTGG"),
+        ("h2", "GCGCAGTTACATGAGACTCTGCCTGGCCGCGATTGCAGATGTTA"),
+        ("h3", "TGGCGTGGAGTGCAGGTATAC"),
+        ("dbs", "BDVHBDVHBDVHBDVHBDVH"),
+    ],
 }
 
 
 def main(args):
-    if args.set or args.construct is not None:
-        if args.construct is not None:
-            args.set.extend(STANDARD_CONSTRUCTS[args.construct])
-        change_config(args.file, args.set)
-    elif args.print_construct:
-        print_construct(args.file)
+    run_config(args.file, args.set, args.construct, args.print_construct)
+
+
+def run_config(file: Path, change_set: List[Tuple] = None, construct: str = None, print_construct: bool = False):
+    if change_set is None:
+        change_set = []
+
+    if change_set or construct is not None:
+        if construct is not None:
+            change_set.extend(STANDARD_CONSTRUCTS[construct])
+        change_config(file, change_set)
+    elif print_construct:
+        print_construct(file)
     else:
-        print_config(args.file)
+        print_config(file)
 
 
 def print_config(file: Path):
@@ -68,7 +81,7 @@ def print_construct(file: Path):
     h2 = Handle("H2", configs["h2"])
     umi = Handle("UMI", "N"*configs["umi_len"])
     abcs = get_abcs(configs["abc_file"])
-    abc = Handle("ABC", "X"*len(abcs["Sequence"][0].strip("^")))
+    abc = Handle("ABC", "X"*len(abcs["Sequence"].iloc[0].strip("^")))
     h3 = Handle("H3", configs["h3"])
 
     handles = [h1, dbs, h2, abc, umi, h3] if configs["h1"] is not None else [dbs, h2, abc, umi, h3]
@@ -106,8 +119,8 @@ def change_config(filename: Path, changes_set: List[Tuple[str, str]]):
         update_configs(configs, key, value)
 
     # Confirm that configs is valid.
-    schema_path = pkg_resources.resource_filename("dbspro", SCHEMA_FILE)
-    validate(configs, schema_path)
+    with as_file(files("dbspro").joinpath(SCHEMA_FILE)) as schema_path:
+        validate(configs, schema_path)
 
     # Write first to temporary file then overwrite filename.
     tmpfile = str(filename) + ".tmp"
