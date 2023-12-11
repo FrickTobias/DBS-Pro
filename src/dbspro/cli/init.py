@@ -133,7 +133,7 @@ def create_symlink(readspath: Path, dirname: Path, target: str):
 
 
 def count_reads(fastq: Path) -> int:
-    with dnaio.open(fastq, mode="r") as f:
+    with dnaio.open(fastq, mode="r", qualities=None) as f:
         return sum([1 for _ in f])
 
 

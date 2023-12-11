@@ -1,6 +1,8 @@
 __pycache__/
-
-/src/DBS-Pro.egg-info/
+*.egg-info/
 
 .idea
 /src/dbspro/_version.py
+.DS_Store
+.vscode
+*testdata*

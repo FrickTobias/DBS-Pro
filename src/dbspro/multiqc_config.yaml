@@ -1,16 +1,18 @@
 top_modules:
-  - cutadapt:
-      name: "Cutadapt (Extract ABC-UMI)"
+  - fastqc:
+      name: "FastQC (Raw)"
       path_filters:
-        - "*cutadapt-extract-abc-umi.log"
-  - cutadapt:
-      name: "Cutadapt (Extract DBS)"
+        - "*_fastqc.zip"
+  - fastqc:
+      name: "FastQC (Trimmed)"
       path_filters:
-        - "*cutadapt-extract-dbs.log"
+        - "*trimmed_fastqc.zip"
 
 run_modules:
   - fastqc
   - cutadapt
+  - preseq
 
 extra_fn_clean_trim:
   - ".subsampled"
+  - ".preseq"
